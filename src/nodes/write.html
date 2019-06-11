@@ -1,0 +1,66 @@
+<script type="text/x-red" data-help-name="write">
+    <p>Connects to a i4scada webfactory server and writes signals.</p>
+        
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload
+            <span class="property-type">any</span>
+        </dt>
+        <dd>The payload of the message to write.</dd>
+        <dt>topic 
+            <span class="property-type">string</span></dt>
+        <dd>The name of the signal to write.</dd>
+    </dl>
+    
+    <h3>Details</h3>
+    <p><code>msg.payload</code> is used as the value of the signal.</p>
+    <p><code>msg.topic</code> is used as the identifier of the signal, the signal name.</p>
+    
+    </script>
+
+
+<script type="text/x-red" data-template-name="write">
+    <!-- By convention, most nodes have a 'name' property. The following div -->
+     <!-- provides the necessary field. Should always be the last option      -->
+
+
+     <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-server "></i> Server</label>
+        <input type="text" id="node-input-server" placeholder="server">
+    </div>
+
+     <div class="form-row">
+         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+         <input type="text" id="node-input-name" placeholder="Name">
+     </div>
+ </script>
+
+
+
+
+<script type="text/javascript">
+
+    RED.nodes.registerType('write', {
+        category: 'i4scada', // the palette category
+        defaults: { // defines the editable properties of the node
+            server: {
+                value: "",
+                type: "configuration"
+            },
+            name: {
+                value: ""
+            } //  along with default values.
+        },
+        inputs: 1, // set the number of inputs - only 0 or 1
+        outputs: 0, // set the number of outputs - 0 to n
+        // set the icon (held in icons dir below where you save the node)
+        icon: "bridge-dash.png", // saved in  icons/myicon.png
+        color: "#E86C58",
+        label: function () { // sets the default label contents
+            return this.name || "write";
+        },
+        labelStyle: function () { // sets the class to apply to the label
+            return this.name ? "node_label_italic" : "";
+        }
+    });
+</script>

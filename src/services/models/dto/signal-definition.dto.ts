@@ -1,0 +1,42 @@
+import { CommonSignalDefinition } from "./common-signal-definition.model";
+import { DiscreteValueDTO } from "./discrete-value.dto";
+import { LogDTO } from "./log.dto";
+import { ServerDTO } from "./server.dto";
+import { ConnectorDTO } from "./connector.dto";
+import { SignalGroupDTO } from "./signal-group.dto";
+import { WriteGroupDTO } from "./write-group.dto";
+
+export interface SignalDefinitionDTO extends CommonSignalDefinition {
+    AliasName: string;
+    DescriptionSymbolicText: string;
+    Status: number;
+    OPCEnabled: boolean;
+    OPCQuality: number;
+    FactorX1: number;
+    FactorX2: number;
+    FactorY1: number;
+    FactorY2: number;
+    LogUserActivity: boolean;
+    Hysterese: number;
+    HystereseLog: number;
+    HystereseAlarm: number;
+    Hysterese_2: number;
+    HystereseLog_2: number;
+    HystereseAlarm_2: number;
+    VChannel: boolean;
+    VChannelTypeID: number;
+    VChannelInitValue: string;
+    AltValue: boolean;
+    AltValue_1: number;
+    AltValue_2: number;
+    AltValue_3: number;
+    AltValue_4: number;
+    DataTypeID: number;
+    OfflineValue: string;
+    DiscreteValues: DiscreteValueDTO[];
+    Logs: LogDTO[];
+    Server: ServerDTO;
+    Connector: ConnectorDTO;
+    Group: SignalGroupDTO;
+    WriteGroup: WriteGroupDTO;
+}

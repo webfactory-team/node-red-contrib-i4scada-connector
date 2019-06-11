@@ -1,0 +1,27 @@
+import { DescriptionDTO } from "./description.dto";
+
+export interface UserDTO extends DescriptionDTO {
+    Password: string,
+    UserLevel: number,
+    AllowMultipleLogons: boolean,
+    AutoLogOffInterval: number,
+    MaxFailedLogOns: number,
+    FailedLogOns: number,
+    LogActivities: boolean,
+    Active: boolean,
+    FirstName: string,
+    LastName: string,
+    RFIDSerialNo: string,
+    IDNumber: string,
+    Plant: string,
+    Company: string,
+    MaintenancePassword: string,
+    MobileJobsPlanViewDuration: number,
+    Version: number,
+    PasswordExpires: boolean,
+    PasswordCreationDate: string,
+    IsAdmin: boolean,
+    IsADUser: boolean,
+    IsDeleted: boolean,
+    AuthorizationGroupIDs: string[],
+}

@@ -1,0 +1,156 @@
+<script type="text/x-red" data-help-name="signals">
+    <p>Connects to a i4scada webfactory server and publishes signals.</p>
+        
+     <h3>Outputs</h3>
+         <ol class="node-ports">
+             <li>Standard output
+                 <dl class="message-properties">
+                     <dt>payload <span class="property-type">any</span></dt>
+                     <dd>The signal value.</dd>
+                 </dl>
+                 <dl class="message-properties">
+                    <dt>topic <span class="property-type">string</span></dt>
+                    <dd>The signal name.</dd>
+                </dl>
+             </li>
+         </ol>
+
+    
+    <h3>Details</h3>
+        <p><code>msg.payload</code> is used as the value of the signal.</p>
+        <p><code>msg.topic</code> is used as the identifier of the signal, the signal name.</p>
+    
+    </script>
+
+<script type="text/x-red" data-template-name="signals">
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-server "></i> Server</label>
+        <input type="text" id="node-input-server" placeholder="server">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-count"><i class="fa fa-server "></i> Count</label>
+        <input type="number" id="node-input-count" placeholder="count">
+    </div>
+
+    <div class="form-row node-input-signals-container-row" style="margin-bottom: 0px;width: 100%">
+        <label for="node-input-width" style="vertical-align:top"><i class="fa fa-list-alt"></i> Signals</label>
+        <div id="node-input-signals-container-div" style="box-sizing: border-box; border-radius: 5px; height: 257px; padding: 5px; border: 1px solid #ccc; overflow-y:scroll;display: inline-block; width: calc(70% + 15px);">
+            <ol id="node-input-signals-container" style=" list-style-type:none; margin: 0;"></ol>
+        </div>
+    </div>
+    <div class="form-row">
+        <a href="#" class="editor-button editor-button-small" id="node-input-add-option" style="margin-top: 4px; margin-left: 103px;"><i class="fa fa-plus"></i> <span>add</span></a>
+    </div>
+
+     <br/>
+     <!-- By convention, most nodes have a 'name' property. The following div -->
+     <!-- provides the necessary field. Should always be the last option      -->
+     <div class="form-row">
+         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+         <input type="text" id="node-input-name" placeholder="Name">
+     </div>
+ </script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('signals', {
+        category: 'i4scada', // the palette category
+        defaults: { // defines the editable properties of the node
+            server: {
+                value: "",
+                type: "configuration"
+            },
+            count: {
+                value: 100,
+                required: true,
+                validate: RED.validators.number()
+            },
+            signals: {
+                value: [{
+                    name: ""
+                }]
+            },
+            name: {
+                value: ""
+            } //  along with default values.
+        },
+        inputs: 0, // set the number of inputs - only 0 or 1
+        outputs: 1, // set the number of outputs - 0 to n
+        // set the icon (held in icons dir below where you save the node)
+        icon: "bridge.png", // saved in  icons/myicon.png
+        color: "#E86C58",
+        label: function () { // sets the default label contents
+            return this.name || "signals";
+        },
+        labelStyle: function () { // sets the class to apply to the label
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function () {
+            function generateOption(i, option) {
+                var container = $('<li/>', {
+                    style: "background: #fff; margin:0; padding:8px 0px 0px; border-bottom: 1px solid #ccc;"
+                });
+                var row = $('<div/>').appendTo(container);
+                var row2 = $('<div/>', {
+                    style: "padding-top:5px; padding-left:175px;"
+                }).appendTo(container);
+                var row3 = $('<div/>', {
+                    style: "padding-top:5px; padding-left:120px;"
+                }).appendTo(container);
+
+                var labelField = $('<input/>', {
+                    class: "node-input-option-name",
+                    type: "text",
+                    style: "margin-left:7px; width:calc(100% - 45px);",
+                    placeholder: 'Signalname',
+                    value: option.name
+                }).appendTo(row);
+                var finalspan = $('<span/>', {
+                    style: "float:right; margin-right:8px;"
+                }).appendTo(row);
+                var deleteButton = $('<a/>', {
+                    href: "#",
+                    class: "editor-button editor-button-small",
+                    style: "margin-top:7px; margin-left:5px;"
+                }).appendTo(finalspan);
+                $('<i/>', {
+                    class: "fa fa-remove"
+                }).appendTo(deleteButton);
+                deleteButton.click(function () {
+                    container.css({
+                        "background": "#fee"
+                    });
+                    container.fadeOut(300, function () {
+                        $(this).remove();
+                    });
+                });
+                $("#node-input-signals-container").append(container);
+            }
+
+            $("#node-input-add-option").click(function () {
+                generateOption($("#node-input-signals-container").children().length + 1, {});
+                $("#node-input-signals-container-div").scrollTop($(
+                    "#node-input-signals-container-div").get(0).scrollHeight);
+            });
+            for (var i = 0; i < this.signals.length; i++) {
+                var signal = this.signals[i];
+                generateOption(i + 1, signal);
+            }
+        },
+        oneditsave: function () {
+            var signals = $("#node-input-signals-container").children();
+            var node = this;
+            node.signals = [];
+            signals.each(function (i) {
+                var option = $(this);
+                var o = {
+                    name: option.find(".node-input-option-name").val(),
+                };
+                node.signals.push(o);
+            });
+        },
+        oneditresize: function () {}
+
+    });
+</script>
