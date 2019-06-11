@@ -18,6 +18,11 @@ Run the following command for global install
 * write: Writing Signals to the server.
 * read: Read a signal from the server.
 
+## Showcase
+
+<iframe width="640" height="360" src="https://www.youtube.com/embed/uonU1EcUecA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+
 ## Authors
 
 Kim Lukas Bechtold [WEBfactory GmbH][1]
