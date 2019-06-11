@@ -9,7 +9,7 @@
     "build": "tsc && npm run html",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "homepage": "https://webfactory-i4.de",
+  "homepage": "https://github.com/webfactory-team/node-red-contrib-i4scada-connector",
   "author": "Kim Lukas Bechtold - WEBfactory GmbH",
   "license": "MIT",
   "keywords": [

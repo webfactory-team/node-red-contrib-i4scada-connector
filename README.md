@@ -4,11 +4,11 @@
 
 Run the following command in the root directory of your Node-RED install
 
-    npm install node-red-contrib-i4scada-connector
+    npm install @webfactorygmbh/node-red-contrib-i4scada-connector
 
 Run the following command for global install
 
-    npm install -g node-red-contrib-i4scada-connector
+    npm install -g @webfactorygmbh/node-red-contrib-i4scada-connector
 
 ## Nodes
 
