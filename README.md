@@ -20,8 +20,7 @@ Run the following command for global install
 
 ## Showcase
 
-<iframe width="640" height="360" src="https://www.youtube.com/embed/uonU1EcUecA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
+[![IMAGE ALT TEXT](https://img.youtube.com/vi/uonU1EcUecA/0.jpg)](http://www.youtube.com/watch?v=uonU1EcUecA "i4SCADA and Node RED - A fun flow using Twitter")
 
 ## Authors
 
