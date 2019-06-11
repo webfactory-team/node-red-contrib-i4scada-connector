@@ -12,7 +12,7 @@ Run the following command for global install
 
 ## Nodes
 
-![Alt text](/nodes.jpg "Nodes overview")
+![Alt text](https://raw.githubusercontent.com/webfactory-team/node-red-contrib-i4scada-connector/master/nodes.JPG "Nodes overview")
 
 * signals: Getting updates from the server.
 * write: Writing Signals to the server.
