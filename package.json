@@ -1,6 +1,6 @@
 {
   "name": "@webfactorygmbh/node-red-contrib-i4scada-connector",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -9,9 +9,16 @@
     "build": "tsc && npm run html",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "homepage": "https://github.com/webfactory-team/node-red-contrib-i4scada-connector",
+  "homepage": "https://webfactory-i4.com",
+  "repository":"github:webfactory-team/node-red-contrib-i4scada-connector",
   "author": "Kim Lukas Bechtold - WEBfactory GmbH",
   "license": "MIT",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/webfactory-team/node-red-contrib-i4scada-connector/blob/master/LICENSE"
+    }
+  ],
   "keywords": [
     "node-red",
     "WEBfactory",
