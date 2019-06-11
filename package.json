@@ -1,5 +1,5 @@
 {
-  "name": "node-red-contrib-i4scada-connector",
+  "name": "@webfactorygmbh/node-red-contrib-i4scada-connector",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
