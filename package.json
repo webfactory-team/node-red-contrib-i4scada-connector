@@ -1,7 +1,7 @@
 {
   "name": "@webfactorygmbh/node-red-contrib-i4scada-connector",
-  "version": "1.0.4",
-  "description": "",
+  "version": "1.0.5",
+  "description": "Node-RED Nodes for read and write Signal values on WEBfactory i4SCADA.",
   "main": "dist/index.js",
   "scripts": {
     "html": "copyfiles -u 1 \"./src/**/*.html\" \"dist\"",
