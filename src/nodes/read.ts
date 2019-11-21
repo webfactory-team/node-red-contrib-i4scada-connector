@@ -41,9 +41,13 @@ export = function (RED) {
                             node.send(msg);
                         } else {
                             node.status({ fill: "red", shape: "dot", text: "read failed" });
+                            msg.successful = false;
+                            node.send(msg);
                         }
                     } catch (error) {
                         node.status({ fill: "red", shape: "dot", text: "read failed" });
+                        msg.successful = false;
+                        node.send(msg);
                     }
                 }
             });

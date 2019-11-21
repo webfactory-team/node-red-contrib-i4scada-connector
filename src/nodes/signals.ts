@@ -43,7 +43,6 @@ export = function (RED) {
             const fill = value ? "green" : "red";
             const text = value ? "connected" : "disconnected";
             node.status({ fill: fill, shape: "dot", text: text });
-
         });
 
         node.on("close", async (done: () => void) => {
