@@ -6,6 +6,8 @@ import { AlarmFilterDTO } from "../models/dto/alarm-filter.dto";
 import { AcknowledgeResultDTO } from "../models/dto/acknowledge-result.dto";
 import { AlarmDefinitionFilterDTO } from "../models/dto/alarm-definition-filter.dto";
 import { AlarmDefinitionsDTO } from "../models/dto/alarm-definitions.dto";
+import { AlarmGroupDTO } from "../models/dto/alarm-group.dto";
+import { AlarmTypeDTO } from "../models/alarm-type.dto";
 
 /**
  *  AlarmsServiceApi
@@ -89,6 +91,88 @@ export class AlarmsApi {
         return data.d;
     }
 
+    public async acknowledgeAllAlarms(sessionId: string, clientId: string, userName: string, isDomainUser: boolean, comment: string, timeOut: number): Promise<AcknowledgeResultDTO> {
+        this.logger.logger.debug(`acknowledgeAllAlarms`);
+        const data = await request.post(`${this.alarmsServiceUrl}/AcknowledgeAllAlarms`, {
+            json: true, body: {
+                sessionId: sessionId,
+                clientId: clientId,
+                userName: userName,
+                isDomainUser: isDomainUser,
+                comment: comment,
+                millisecondsTimeOut: timeOut
+            }
+        });
+        return data.d;
+    }
+
+    public async acknowledgeAllAlarmsByToken(securityToken: string, comment: string, timeOut: number): Promise<AcknowledgeResultDTO> {
+        this.logger.logger.debug(`acknowledgeAllAlarmsByToken`);
+        const data = await request.post(`${this.alarmsServiceUrl}/AcknowledgeAllAlarmsByToken`, {
+            json: true, body: {
+                securityToken: securityToken,
+                comment: comment,
+                millisecondsTimeOut: timeOut
+            }
+        });
+        return data.d;
+    }
+
+    public async acknowledgeAllGoneAlarms(sessionId: string, clientId: string, userName: string, isDomainUser: boolean, comment: string, timeOut: number): Promise<AcknowledgeResultDTO> {
+        this.logger.logger.debug(`AcknowledgeAlarmsByToken`);
+        const data = await request.post(`${this.alarmsServiceUrl}/AcknowledgeAllGoneAlarms`, {
+            json: true, body: {
+                sessionId: sessionId,
+                clientId: clientId,
+                userName: userName,
+                isDomainUser: isDomainUser,
+                comment: comment,
+                millisecondsTimeOut: timeOut
+            }
+        });
+        return data.d;
+    }
+
+    public async acknowledgeAllGoneAlarmsByToken(securityToken: string, comment: string, timeOut: number): Promise<AcknowledgeResultDTO> {
+        this.logger.logger.debug(`acknowledgeAllGoneAlarmsByToken`);
+        const data = await request.post(`${this.alarmsServiceUrl}/AcknowledgeAllGoneAlarmsByToken`, {
+            json: true, body: {
+                securityToken: securityToken,
+                comment: comment,
+                millisecondsTimeOut: timeOut
+            }
+        });
+        return data.d;
+    }
+    public async acknowledgeAlarmsByGroup(sessionId: string, clientId: string, userName: string, isDomainUser: boolean, groupName: string, comment: string, timeOut: number): Promise<AcknowledgeResultDTO> {
+        this.logger.logger.debug(`acknowledgeAlarmsByGroup`);
+        const data = await request.post(`${this.alarmsServiceUrl}/AcknowledgeAlarmsByGroup`, {
+            json: true, body: {
+                sessionId: sessionId,
+                clientId: clientId,
+                userName: userName,
+                isDomainUser: isDomainUser,
+                groupName: groupName,
+                comment: comment,
+                millisecondsTimeOut: timeOut
+            }
+        });
+        return data.d;
+    }
+
+    public async acknowledgeAlarmsByGroupByToken(securityToken: string, groupName: string, comment: string, timeOut: number): Promise<AcknowledgeResultDTO> {
+        this.logger.logger.debug(`acknowledgeAlarmsByGroupByToken`);
+        const data = await request.post(`${this.alarmsServiceUrl}/AcknowledgeAlarmsByGroupByToken`, {
+            json: true, body: {
+                securityToken: securityToken,
+                comment: comment,
+                groupName: groupName,
+                millisecondsTimeOut: timeOut
+            }
+        });
+        return data.d;
+    }
+
     public async getAlarmDefinitions(sessionId: string, clientId: string, userName: string, isDomainUser: boolean, filter: AlarmDefinitionFilterDTO, timeOut: number): Promise<AlarmDefinitionsDTO> {
         this.logger.logger.debug(`getAlarmDefinitions`);
         const data = await request.post(`${this.alarmsServiceUrl}/GetAlarmDefinitions`, {
@@ -103,4 +187,60 @@ export class AlarmsApi {
         });
         return data.d;
     }
+
+    public async getAlarmGroupsByToken(securityToken: string, languageId: number, timeOut: number): Promise<AlarmGroupDTO[]> {
+        this.logger.logger.debug(`getAlarmGroupsByToken`);
+        const data = await request.post(`${this.alarmsServiceUrl}/GetAlarmGroupsByToken`, {
+            json: true, body: {
+                securityToken: securityToken,
+                languageID: languageId,
+                millisecondsTimeOut: timeOut
+            }
+        });
+        return data.d;
+    }
+
+    public async getAlarmGroups(sessionId: string, clientId: string, userName: string, isDomainUser: boolean, languageId: number, timeOut: number): Promise<AlarmGroupDTO[]> {
+        this.logger.logger.debug(`getAlarmGroups`);
+        const data = await request.post(`${this.alarmsServiceUrl}/GetAlarmGroups`, {
+            json: true, body: {
+                sessionId: sessionId,
+                clientId: clientId,
+                userName: userName,
+                isDomainUser: isDomainUser,
+                languageID: languageId,
+                millisecondsTimeOut: timeOut
+            }
+        });
+        return data.d;
+    }
+
+    public async getAlarmTypesByToken(securityToken: string, languageId: number, timeOut: number): Promise<AlarmTypeDTO[]> {
+        this.logger.logger.debug(`getAlarmTypesByToken`);
+        const data = await request.post(`${this.alarmsServiceUrl}/GetAlarmTypesByToken`, {
+            json: true, body: {
+                securityToken: securityToken,
+                languageID: languageId,
+                millisecondsTimeOut: timeOut
+            }
+        });
+        return data.d;
+    }
+
+    public async getAlarmTypes(sessionId: string, clientId: string, userName: string, isDomainUser: boolean, languageId: number, timeOut: number): Promise<AlarmTypeDTO[]> {
+        this.logger.logger.debug(`getAlarmTypes`);
+        const data = await request.post(`${this.alarmsServiceUrl}/GetAlarmTypes`, {
+            json: true, body: {
+                sessionId: sessionId,
+                clientId: clientId,
+                userName: userName,
+                isDomainUser: isDomainUser,
+                languageID: languageId,
+                millisecondsTimeOut: timeOut
+            }
+        });
+        return data.d;
+    }
+
+
 }
