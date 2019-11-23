@@ -1,5 +1,6 @@
 import { injectable, inject } from "inversify";
-import { ApiService } from "./api.service";
+import { SecurityApi } from "./api/security-api";
+import { NtlmApi } from "./api/ntlm-api";
 import { SessionService } from "./session.service";
 import { FunctionResultDTO } from "./models/dto/function-result.dto";
 import _ from "underscore";
@@ -13,7 +14,8 @@ export class SecurityService {
     public readonly timeOut = 10000;
 
     constructor(
-        @inject(ApiService) private readonly apiService: ApiService,
+        @inject(SecurityApi) private readonly securityApi: SecurityApi,
+        @inject(NtlmApi) private readonly ntlmApi: NtlmApi,
         @inject(SessionService) private readonly sessionService: SessionService,
         @inject(SignalsService) private readonly signalsService: SignalsService,
         @inject(ConnectorService) private readonly connectorService: ConnectorService,
@@ -34,7 +36,7 @@ export class SecurityService {
         try {
             this.sessionService.clearSecureSession();
             await this.connectorService.connect();
-            const token = await this.apiService.loginWindowsUser(this.sessionService.sessionId, this.sessionService.getClientId(), this.timeOut);
+            const token = await this.ntlmApi.loginWindowsUser(this.sessionService.sessionId, this.sessionService.getClientId(), this.timeOut);
             return await this.executeAfterLogin(token);
         } catch (error) {
             this.logger.logger.error(error);
@@ -45,7 +47,7 @@ export class SecurityService {
         this.logger.logger.info("Try logout")
         if (this.sessionService.getSecurityToken()) {
             try {
-                const status = await this.apiService.logout(this.sessionService.getSecurityToken(), this.timeOut);
+                const status = await this.securityApi.logout(this.sessionService.getSecurityToken(), this.timeOut);
                 if (status) {
                     this.logger.logger.info("Logout successful")
                     this.sessionService.clearSecureSession();
@@ -62,7 +64,7 @@ export class SecurityService {
 
     private async performLogin(userName: string, password: string, isDomainUser: boolean) {
         try {
-            const token = await this.apiService.login(this.sessionService.sessionId, this.sessionService.getClientId(), userName, password, isDomainUser, this.timeOut);
+            const token = await this.securityApi.login(this.sessionService.sessionId, this.sessionService.getClientId(), userName, password, isDomainUser, this.timeOut);
             await this.executeAfterLogin(token);
         } catch (error) {
             this.logger.logger.error(error);

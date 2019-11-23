@@ -1,7 +1,10 @@
 import { injectable, inject } from "inversify";
 import { SessionDTO } from "./models/dto/session.dto";
-import { ApiService } from "./api.service";
+import { SecurityApi } from "./api/security-api";
+import { NtlmApi } from "./api/ntlm-api";
+import { SignalsApi } from "./api/signals-api";
 import { SessionService } from "./session.service";
+import { AlarmsApi } from "./api/alarms-api";
 import { SecuritySessionDTO } from "./models/dto/security-session.dto";
 import { i4Logger } from "../logger/logger";
 
@@ -12,7 +15,10 @@ export class ConnectorService {
     private sessionPromise: Promise<SessionDTO>;
 
     constructor(
-        @inject(ApiService) private readonly apiService: ApiService,
+        @inject(SecurityApi) private readonly securityApi: SecurityApi,
+        @inject(SignalsApi) private readonly signalsApi: SignalsApi,
+        @inject(NtlmApi) private readonly ntlmApi: NtlmApi,
+        @inject(AlarmsApi) private readonly alarmsApi: AlarmsApi,
         @inject(SessionService) private readonly sessionService: SessionService,
         @inject(i4Logger) private readonly logger: i4Logger
     ) {
@@ -20,7 +26,7 @@ export class ConnectorService {
     }
 
     public async disconnect() {
-        await this.apiService.disconnect(this.sessionService.sessionId);
+        await this.signalsApi.disconnect(this.sessionService.sessionId);
         this.sessionService.clearSecureSession();
         this.session = null;
         this.sessionPromise = null;
@@ -28,7 +34,10 @@ export class ConnectorService {
 
     public setUrl(serverUrl: string = null) {
         if (serverUrl) {
-            this.apiService.url = serverUrl;
+            this.signalsApi.url = serverUrl;
+            this.securityApi.url = serverUrl;
+            this.ntlmApi.url = serverUrl;
+            this.alarmsApi.url = serverUrl;
         }
     }
 
@@ -47,11 +56,11 @@ export class ConnectorService {
                 const securityToken = this.sessionService.getSecurityToken();
                 if (securityToken) {
                     this.logger.logger.info("Updating session");
-                    const session = await this.apiService.connectWithToken(securityToken, []);
+                    const session = await this.securityApi.connectWithToken(securityToken, []);
                     this.session = this.updateSession(session);
                 } else {
                     this.logger.logger.info("Creating session");
-                    let session = await this.apiService.connect();
+                    let session = await this.signalsApi.connect();
                     session = this.validateLicense(session);
                     session = this.initializeSession(session);
                     this.session = session;

@@ -1,5 +1,5 @@
 import { injectable, inject } from "inversify";
-import { ApiService } from "./api.service";
+import { SecurityApi } from "./api/security-api";
 import * as uuid from "uuid";
 import { ITokenPersistentService } from "./token-persistent.service";
 import { i4Logger } from "../logger/logger";
@@ -20,7 +20,7 @@ export class SessionService {
     }
 
     constructor(
-        @inject(ApiService) private readonly apiService: ApiService,
+        @inject(SecurityApi) private readonly securityApi: SecurityApi,
         @inject(i4Logger) private readonly logger: i4Logger,
         @inject("ITokenPersistentService") private readonly tokenPersistentService: ITokenPersistentService,
     ) {
@@ -66,14 +66,14 @@ export class SessionService {
             return null;
         }
 
-        const isLoggedIn = await this.apiService.isUserLoggedIn(securityToken, this.timeOut);
+        const isLoggedIn = await this.securityApi.isUserLoggedIn(securityToken, this.timeOut);
 
         if (!isLoggedIn) {
             this.clearSecureSession();
             return null;
         }
 
-        const user = await this.apiService.getCurrentLoggedInUser(securityToken, this.timeOut);
+        const user = await this.securityApi.getCurrentLoggedInUser(securityToken, this.timeOut);
 
         if (this.currentLoggedInUser !== user.Name) {
             this.currentLoggedInUser = user.Name;
@@ -93,7 +93,7 @@ export class SessionService {
             return null;
         }
 
-        const authorizations = await this.apiService.getCurrentUserAuthorizations(securityToken, this.timeOut);
+        const authorizations = await this.securityApi.getCurrentUserAuthorizations(securityToken, this.timeOut);
 
         if (!authorizations) {
             this.clearSecureSession();

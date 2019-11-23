@@ -1,5 +1,5 @@
 import { injectable, inject } from "inversify";
-import { ApiService } from "./api.service";
+import { SignalsApi } from "./api/signals-api";
 import { ActionResult } from "./models/action-result.model";
 import { KeyValuePair } from "./models/key-value-pair.model";
 import { ConnectorService } from "./connector.service";
@@ -41,7 +41,7 @@ export class SignalsService {
     public readonly connectionStatusQueue = new Subject<boolean>();
 
     constructor(
-        @inject(ApiService) private readonly apiService: ApiService,
+        @inject(SignalsApi) private readonly signalsApi: SignalsApi,
         @inject(ConnectorService) private readonly connectorService: ConnectorService,
         @inject(SessionService) private readonly sessionService: SessionService,
         @inject(i4Logger) private readonly logger: i4Logger
@@ -72,7 +72,7 @@ export class SignalsService {
     public async readSignals(signalNames: string[]) {
         await this.connectorService.connect();
         this.logger.logger.debug(`Read signals: ${signalNames.map(signal => signal).join()}`);
-        return await this.apiService.readSignals(this.sessionService.sessionId, this.sessionService.getClientId(), signalNames);
+        return await this.signalsApi.readSignals(this.sessionService.sessionId, this.sessionService.getClientId(), signalNames);
     }
 
     public async writeSignals(signalValues: KeyValuePair<string, any>[]) {
@@ -84,9 +84,9 @@ export class SignalsService {
         await this.connectorService.connect();
         let responseCodes: number[];
         if (securityToken && currentUser) {
-            responseCodes = await this.apiService.writeSecuredSignals(securityToken, this.sessionService.getClientId(), signalValues);
+            responseCodes = await this.signalsApi.writeSecuredSignals(securityToken, this.sessionService.getClientId(), signalValues);
         } else {
-            responseCodes = await this.apiService.writeUnsecuredSignals(this.sessionService.sessionId, this.sessionService.getClientId(), signalValues);
+            responseCodes = await this.signalsApi.writeUnsecuredSignals(this.sessionService.sessionId, this.sessionService.getClientId(), signalValues);
         }
         return this.handleWriteResponse(responseCodes);
     }
@@ -96,9 +96,9 @@ export class SignalsService {
 
         const securityToken = this.sessionService.getSecurityToken();
         if (securityToken) {
-            return await this.apiService.getSignalDefinitionsByToken(securityToken, filter, 7, start, count, this.sessionService.timeOut);
+            return await this.signalsApi.getSignalDefinitionsByToken(securityToken, filter, 7, start, count, this.sessionService.timeOut);
         } else {
-            return await this.apiService.getSignalDefinitions(this.sessionService.sessionId, this.sessionService.getClientId(), this.sessionService.currentLoggedInUser, this.sessionService.currentLoggedInUserIsDomainUser, filter, 7, start, count, this.sessionService.timeOut);
+            return await this.signalsApi.getSignalDefinitions(this.sessionService.sessionId, this.sessionService.getClientId(), this.sessionService.currentLoggedInUser, this.sessionService.currentLoggedInUserIsDomainUser, filter, 7, start, count, this.sessionService.timeOut);
         }
     }
 
@@ -106,9 +106,9 @@ export class SignalsService {
         await this.connectorService.connect();
         const securityToken = this.sessionService.getSecurityToken();
         if (securityToken) {
-            return await this.apiService.getSignalNamesByToken(securityToken, filter, start, count, this.sessionService.timeOut);
+            return await this.signalsApi.getSignalNamesByToken(securityToken, filter, start, count, this.sessionService.timeOut);
         } else {
-            return await this.apiService.getSignalNames(this.sessionService.sessionId, this.sessionService.getClientId(), this.sessionService.currentLoggedInUser, this.sessionService.currentLoggedInUserIsDomainUser, filter, start, count, this.sessionService.timeOut);
+            return await this.signalsApi.getSignalNames(this.sessionService.sessionId, this.sessionService.getClientId(), this.sessionService.currentLoggedInUser, this.sessionService.currentLoggedInUserIsDomainUser, filter, start, count, this.sessionService.timeOut);
         }
     }
 
@@ -116,9 +116,9 @@ export class SignalsService {
         await this.connectorService.connect();
         const securityToken = this.sessionService.getSecurityToken();
         if (securityToken) {
-            return await this.apiService.getGroupNamesByToken(securityToken, filter, 7, start, count, this.sessionService.timeOut);
+            return await this.signalsApi.getGroupNamesByToken(securityToken, filter, 7, start, count, this.sessionService.timeOut);
         } else {
-            return await this.apiService.getGroupNames(this.sessionService.sessionId, this.sessionService.getClientId(), this.sessionService.currentLoggedInUser, this.sessionService.currentLoggedInUserIsDomainUser, filter, 7, start, count, this.sessionService.timeOut);
+            return await this.signalsApi.getGroupNames(this.sessionService.sessionId, this.sessionService.getClientId(), this.sessionService.currentLoggedInUser, this.sessionService.currentLoggedInUserIsDomainUser, filter, 7, start, count, this.sessionService.timeOut);
         }
     }
 
@@ -144,7 +144,7 @@ export class SignalsService {
 
     private async unRegisterSignals(names: string[]) {
         await this.connectorService.connect();
-        await this.apiService.unregisterSignals(this.sessionService.sessionId, this.sessionService.getClientId(), names);
+        await this.signalsApi.unregisterSignals(this.sessionService.sessionId, this.sessionService.getClientId(), names);
     }
 
     public async getOnlineUpdates() {
@@ -211,7 +211,7 @@ export class SignalsService {
         try {
             this.getUpdates = true;
             this.logger.logger.debug(`getUpdates - sessionId:${request.sessionId} - clientId:${request.clientId} - requestId:${request.requestId}`);
-            const update = await this.apiService.getUpdates(request.sessionId, request.clientId, request.requestId);
+            const update = await this.signalsApi.getUpdates(request.sessionId, request.clientId, request.requestId);
             this.connectionStatusQueue.next(true);
             this.updateSignals(update);
         } catch (error) {
@@ -275,7 +275,7 @@ export class SignalsService {
         const sessionId = this.sessionService.sessionId;
         const clientId = this.sessionService.getClientId();
         try {
-            const results = await this.apiService.registerSignals(sessionId, clientId, signalNames);
+            const results = await this.signalsApi.registerSignals(sessionId, clientId, signalNames);
             this.onSignalsRegistered(signalNames, results);
         } catch (error) {
             this.logger.logger.error(error);
