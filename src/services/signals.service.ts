@@ -148,10 +148,14 @@ export class SignalsService {
     }
 
     public async getOnlineUpdates() {
-        await this.connectorService.connect();
-        this.logger.logger.info(`start geting online updates`);
-        await this.registerSignals();
-        await this.startGettingUpdates();
+        try {
+            await this.connectorService.connect();
+            this.logger.logger.info(`start geting online updates`);
+            await this.registerSignals();
+            await this.startGettingUpdates();
+        } catch (error) {
+            this.logger.logger.error(error);
+        }
     }
 
     private handleWriteResponse(response: number[]): ActionResult {

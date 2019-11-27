@@ -26,10 +26,17 @@ export class ConnectorService {
     }
 
     public async disconnect() {
-        await this.signalsApi.disconnect(this.sessionService.sessionId);
-        this.sessionService.clearSecureSession();
-        this.session = null;
-        this.sessionPromise = null;
+        try {
+            this.logger.logger.info("disconnect deleting session.")
+            await this.signalsApi.disconnect(this.sessionService.sessionId);
+        } catch (error) {
+            this.logger.logger.error(error);
+        }
+        finally {
+            this.sessionService.clearSecureSession();
+            this.session = null;
+            this.sessionPromise = null;
+        }
     }
 
     public setUrl(serverUrl: string = null) {
@@ -58,12 +65,14 @@ export class ConnectorService {
                     this.logger.logger.info("Updating session");
                     const session = await this.securityApi.connectWithToken(securityToken, []);
                     this.session = this.updateSession(session);
+                    this.logger.logger.info("Session updated");
                 } else {
                     this.logger.logger.info("Creating session");
                     let session = await this.signalsApi.connect();
                     session = this.validateLicense(session);
                     session = this.initializeSession(session);
                     this.session = session;
+                    this.logger.logger.info("Session created");
                 }
             }
         } catch (error) {

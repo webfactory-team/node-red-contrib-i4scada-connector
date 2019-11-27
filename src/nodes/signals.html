@@ -23,6 +23,44 @@
     </script>
 
 <script type="text/x-red" data-template-name="signals">
+    <style>
+            .truncate {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              }
+
+            .autocomplete-items {
+                position: absolute;
+                border: 1px solid #d4d4d4;
+                border-bottom: none;
+                border-top: none;
+                z-index: 99;
+                /*position the autocomplete items to be the same width as the container:*/
+                top: 34px;
+                left: 0;
+                right: 0;
+              }
+              
+              .autocomplete-items div {
+                padding: 10px;
+                cursor: pointer;
+                background-color: #fff; 
+                border-bottom: 1px solid #d4d4d4; 
+                border-top: 1px solid #d4d4d4; 
+              }
+              
+              /*when hovering an item:*/
+              .autocomplete-items div:hover {
+                background-color: #e9e9e9; 
+              }
+              
+              /*when navigating through the items using the arrow keys:*/
+              .autocomplete-active {
+                background-color: DodgerBlue !important; 
+                color: #ffffff; 
+              }
+    </style>
 
     <div class="form-row">
         <label for="node-input-server"><i class="fa fa-server "></i> Server</label>
@@ -34,14 +72,19 @@
         <input type="number" id="node-input-count" placeholder="count">
     </div>
 
-    <div class="form-row node-input-signals-container-row" style="margin-bottom: 0px;width: 100%">
+    <!-- Signals -->
+    <div class="form-row node-input-signals-container-search-row" style="width: 100%; height: 34px;">
         <label for="node-input-width" style="vertical-align:top"><i class="fa fa-list-alt"></i> Signals</label>
-        <div id="node-input-signals-container-div" style="box-sizing: border-box; border-radius: 5px; height: 257px; padding: 5px; border: 1px solid #ccc; overflow-y:scroll;display: inline-block; width: calc(70% + 15px);">
+        <div style="display: inline-block; position: relative; width: 70%; height: 20px;">
+            <input type="text" id="node-input-signals-autocomplete" placeholder="Signalname" autocomplete="disable" style="position: absolute; left: 0px; right: 40px; width: calc( 100% - 40px);"/>
+            <a href="#" class="editor-button editor-button" id="node-input-add-option" style="position: absolute; right: 0px; top: 0px;"><i class="fa fa-plus"></i></a>
+        </div>
+     </div>
+
+     <div class="form-row node-input-signals-container-row" style="margin-bottom: 0px; width: 100%;">
+        <div id="node-input-signals-container-div" style="box-sizing: border-box; border-radius: 5px; height: 257px; padding: 5px; border: 1px solid #ccc; overflow-y:scroll;display: inline-block; width: calc(70% + 15px);margin-left: 103px;">
             <ol id="node-input-signals-container" style=" list-style-type:none; margin: 0;"></ol>
         </div>
-    </div>
-    <div class="form-row">
-        <a href="#" class="editor-button editor-button-small" id="node-input-add-option" style="margin-top: 4px; margin-left: 103px;"><i class="fa fa-plus"></i> <span>add</span></a>
     </div>
 
      <br/>
@@ -68,7 +111,7 @@
             },
             signals: {
                 value: [{
-                    name: ""
+                    name: "*"
                 }]
             },
             name: {
@@ -87,6 +130,140 @@
             return this.name ? "node_label_italic" : "";
         },
         oneditprepare: function () {
+
+            var id = this.server;
+            var currentFocus;
+            var input = document.getElementById("node-input-signals-autocomplete");
+
+            input.addEventListener("input", function (e) {
+                var value = this.value;
+                closeAllLists();
+                if (!value) {
+                    return false;
+                }
+                currentFocus = -1;
+                getSignals(value, this, id);
+            });
+
+            input.addEventListener("keydown", function (e) {
+                var x = document.getElementById(this.id + "autocomplete-list");
+                if (x) x = x.getElementsByTagName("div");
+                if (e.keyCode == 40) {
+                    /*If the arrow DOWN key is pressed,
+                    increase the currentFocus variable:*/
+                    currentFocus++;
+                    /*and and make the current item more visible:*/
+                    addActive(x);
+                } else if (e.keyCode == 38) { //up
+                    /*If the arrow UP key is pressed,
+                    decrease the currentFocus variable:*/
+                    currentFocus--;
+                    /*and and make the current item more visible:*/
+                    addActive(x);
+                } else if (e.keyCode == 13) {
+                    /*If the ENTER key is pressed, prevent the form from being submitted,*/
+                    e.preventDefault();
+                    if (currentFocus > -1) {
+                        /*and simulate a click on the "active" item:*/
+                        if (x) x[currentFocus].click();
+                    }
+                }
+            });
+
+            /*execute a function when someone clicks in the document:*/
+            document.addEventListener("click", function (e) {
+                closeAllLists(e.target);
+            });
+
+            $("#node-input-add-option").click(function () {
+                generateOption($("#node-input-signals-container").children().length + 1, {
+                    name: document.getElementById("node-input-signals-autocomplete").value
+                });
+                $("#node-input-signals-container-div").scrollTop($(
+                    "#node-input-signals-container-div").get(0).scrollHeight);
+            });
+            for (var i = 0; i < this.signals.length; i++) {
+                var signal = this.signals[i];
+                generateOption(i + 1, signal);
+            }
+
+            function getSignals(name, input, id) {
+                if (name != null) {
+
+                    $.getJSON('i4scada/signalDefinitions/' + encodeURI(id) + '/' + encodeURI("*" + name +
+                        "*") + '/100', function (data) {
+                        /*create a DIV element that will contain the items (values):*/
+                        var a = document.createElement("DIV");
+                        a.setAttribute("id", input.id + "autocomplete-list");
+                        a.setAttribute("class", "autocomplete-items");
+                        /*append the DIV element as a child of the autocomplete container:*/
+                        input.parentNode.appendChild(a);
+                        for (var index = 0; index < data.length; index++) {
+                            var signal = data[index];
+
+                            var nameString = name.toUpperCase();
+                            var signalString = signal.AliasName.toUpperCase();
+                            var start = signalString.indexOf(nameString);
+
+                            if (start < 0) {
+                                var displayString = signal.AliasName;
+                            } else {
+                                var displayString = signal.AliasName.substring(0, start) +
+                                    "<strong>" +
+                                    signal.AliasName.substring(start, start + name.length) +
+                                    "</strong>" + signal
+                                    .AliasName.substring(start + nameString.length, signalString
+                                        .length);
+                            }
+
+                            /*create a DIV element for each matching element:*/
+                            var b = document.createElement("DIV");
+                            b.className = "truncate";
+                            b.innerHTML = displayString;
+                            b.innerHTML += "<input type='hidden' value='" + signal.AliasName + "'>";
+                            /*execute a function when someone clicks on the item value (DIV element):*/
+                            b.addEventListener("click", function (e) {
+                                /*insert the value for the autocomplete text field:*/
+                                input.value = this.getElementsByTagName("input")[0].value;
+                                /*close the list of autocompleted values,
+                                (or any other open lists of autocompleted values:*/
+                                closeAllLists();
+                            });
+                            a.appendChild(b);
+                        }
+                    });
+                }
+            }
+
+            function closeAllLists(elmnt) {
+                /*close all autocomplete lists in the document,
+                except the one passed as an argument:*/
+                var x = document.getElementsByClassName("autocomplete-items");
+                for (var i = 0; i < x.length; i++) {
+                    if (elmnt != x[i] && elmnt != input) {
+                        x[i].parentNode.removeChild(x[i]);
+                    }
+                }
+            }
+
+            function addActive(x) {
+                /*a function to classify an item as "active":*/
+                if (!x) return false;
+                /*start by removing the "active" class on all items:*/
+                removeActive(x);
+                if (currentFocus >= x.length) currentFocus = 0;
+                if (currentFocus < 0) currentFocus = (x.length - 1);
+                /*add class "autocomplete-active":*/
+                x[currentFocus].classList.add("autocomplete-active");
+            }
+
+            function removeActive(x) {
+                /*a function to remove the "active" class from all autocomplete items:*/
+                for (var i = 0; i < x.length; i++) {
+                    x[i].classList.remove("autocomplete-active");
+                }
+            }
+
             function generateOption(i, option) {
                 var container = $('<li/>', {
                     style: "background: #fff; margin:0; padding:8px 0px 0px; border-bottom: 1px solid #ccc;"
@@ -126,16 +303,6 @@
                     });
                 });
                 $("#node-input-signals-container").append(container);
-            }
-
-            $("#node-input-add-option").click(function () {
-                generateOption($("#node-input-signals-container").children().length + 1, {});
-                $("#node-input-signals-container-div").scrollTop($(
-                    "#node-input-signals-container-div").get(0).scrollHeight);
-            });
-            for (var i = 0; i < this.signals.length; i++) {
-                var signal = this.signals[i];
-                generateOption(i + 1, signal);
             }
         },
         oneditsave: function () {

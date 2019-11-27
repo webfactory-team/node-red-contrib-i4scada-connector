@@ -25,11 +25,15 @@ export class SecurityService {
     }
 
     public async login(userName: string, password: string, isDomainUser: boolean) {
-        this.sessionService.clearSecureSession();
-        await this.connectorService.connect();
-        this.logger.logger.info(`Logging in client ID: ${this.sessionService.getClientId()}`);
-        await this.performLogin(userName, password, isDomainUser);
-        await this.sessionService.getCurrentUserAuthorizations();
+        try {
+            this.sessionService.clearSecureSession();
+            await this.connectorService.connect();
+            this.logger.logger.info(`Logging in client ID: ${this.sessionService.getClientId()}`);
+            await this.performLogin(userName, password, isDomainUser);
+            await this.sessionService.getCurrentUserAuthorizations();
+        } catch (error) {
+            this.logger.logger.error(error);
+        }
     }
 
     public async loginWindowsUser() {
@@ -44,21 +48,25 @@ export class SecurityService {
     }
 
     public async logout() {
-        this.logger.logger.info("Try logout")
-        if (this.sessionService.getSecurityToken()) {
-            try {
-                const status = await this.securityApi.logout(this.sessionService.getSecurityToken(), this.timeOut);
-                if (status) {
-                    this.logger.logger.info("Logout successful")
-                    this.sessionService.clearSecureSession();
-                    return true;
+        try {
+            if (this.sessionService.getSecurityToken()) {
+                this.logger.logger.info("logout");
+                try {
+                    const status = await this.securityApi.logout(this.sessionService.getSecurityToken(), this.timeOut);
+                    if (status) {
+                        this.logger.logger.info("Logout successful")
+                        this.sessionService.clearSecureSession();
+                        return true;
+                    }
+                    this.logger.logger.info("Logout failed");
+                    return false;
+                } catch (error) {
+                    this.logger.logger.error(error);
+                    return false;
                 }
-                this.logger.logger.info("Logout failed");
-                return false;
-            } catch (error) {
-                this.logger.logger.error(error);
-                return false;
             }
+        } catch (error) {
+            this.logger.logger.error(error);
         }
     }
 
