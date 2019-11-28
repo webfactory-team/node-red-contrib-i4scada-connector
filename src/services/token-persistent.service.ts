@@ -32,7 +32,7 @@ export class TokenFlowPersistentService implements ITokenPersistentService {
     }
 
     public getSessionId(): string {
-        const sessionId = this.context.get("sessionId") || null;;
+        const sessionId = this.context.get("sessionId") || null;
         return sessionId;
     }
 

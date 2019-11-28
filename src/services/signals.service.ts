@@ -72,7 +72,7 @@ export class SignalsService {
     public async readSignals(signalNames: string[]) {
         await this.connectorService.connect();
         this.logger.logger.debug(`Read signals: ${signalNames.map(signal => signal).join()}`);
-        return await this.signalsApi.readSignals(this.sessionService.sessionId, this.sessionService.getClientId(), signalNames);
+        return await this.signalsApi.readSignals(this.sessionService.getSessionId(), this.sessionService.getClientId(), signalNames);
     }
 
     public async writeSignals(signalValues: KeyValuePair<string, any>[]) {
@@ -86,7 +86,7 @@ export class SignalsService {
         if (securityToken && currentUser) {
             responseCodes = await this.signalsApi.writeSecuredSignals(securityToken, this.sessionService.getClientId(), signalValues);
         } else {
-            responseCodes = await this.signalsApi.writeUnsecuredSignals(this.sessionService.sessionId, this.sessionService.getClientId(), signalValues);
+            responseCodes = await this.signalsApi.writeUnsecuredSignals(this.sessionService.getSessionId(), this.sessionService.getClientId(), signalValues);
         }
         return this.handleWriteResponse(responseCodes);
     }
@@ -96,9 +96,9 @@ export class SignalsService {
 
         const securityToken = this.sessionService.getSecurityToken();
         if (securityToken) {
-            return await this.signalsApi.getSignalDefinitionsByToken(securityToken, filter, 7, start, count, this.sessionService.timeOut);
+            return await this.signalsApi.getSignalDefinitionsByToken(securityToken, filter, 7, start, count, this.sessionService.millisecondsTimeOut);
         } else {
-            return await this.signalsApi.getSignalDefinitions(this.sessionService.sessionId, this.sessionService.getClientId(), this.sessionService.currentLoggedInUser, this.sessionService.currentLoggedInUserIsDomainUser, filter, 7, start, count, this.sessionService.timeOut);
+            return await this.signalsApi.getSignalDefinitions(this.sessionService.getSessionId(), this.sessionService.getClientId(), this.sessionService.currentLoggedInUser, this.sessionService.currentLoggedInUserIsDomainUser, filter, 7, start, count, this.sessionService.millisecondsTimeOut);
         }
     }
 
@@ -106,9 +106,9 @@ export class SignalsService {
         await this.connectorService.connect();
         const securityToken = this.sessionService.getSecurityToken();
         if (securityToken) {
-            return await this.signalsApi.getSignalNamesByToken(securityToken, filter, start, count, this.sessionService.timeOut);
+            return await this.signalsApi.getSignalNamesByToken(securityToken, filter, start, count, this.sessionService.millisecondsTimeOut);
         } else {
-            return await this.signalsApi.getSignalNames(this.sessionService.sessionId, this.sessionService.getClientId(), this.sessionService.currentLoggedInUser, this.sessionService.currentLoggedInUserIsDomainUser, filter, start, count, this.sessionService.timeOut);
+            return await this.signalsApi.getSignalNames(this.sessionService.getSessionId(), this.sessionService.getClientId(), this.sessionService.currentLoggedInUser, this.sessionService.currentLoggedInUserIsDomainUser, filter, start, count, this.sessionService.millisecondsTimeOut);
         }
     }
 
@@ -116,9 +116,9 @@ export class SignalsService {
         await this.connectorService.connect();
         const securityToken = this.sessionService.getSecurityToken();
         if (securityToken) {
-            return await this.signalsApi.getGroupNamesByToken(securityToken, filter, 7, start, count, this.sessionService.timeOut);
+            return await this.signalsApi.getGroupNamesByToken(securityToken, filter, 7, start, count, this.sessionService.millisecondsTimeOut);
         } else {
-            return await this.signalsApi.getGroupNames(this.sessionService.sessionId, this.sessionService.getClientId(), this.sessionService.currentLoggedInUser, this.sessionService.currentLoggedInUserIsDomainUser, filter, 7, start, count, this.sessionService.timeOut);
+            return await this.signalsApi.getGroupNames(this.sessionService.getSessionId(), this.sessionService.getClientId(), this.sessionService.currentLoggedInUser, this.sessionService.currentLoggedInUserIsDomainUser, filter, 7, start, count, this.sessionService.millisecondsTimeOut);
         }
     }
 
@@ -144,7 +144,7 @@ export class SignalsService {
 
     private async unRegisterSignals(names: string[]) {
         await this.connectorService.connect();
-        await this.signalsApi.unregisterSignals(this.sessionService.sessionId, this.sessionService.getClientId(), names);
+        await this.signalsApi.unregisterSignals(this.sessionService.getSessionId(), this.sessionService.getClientId(), names);
     }
 
     public async getOnlineUpdates() {
@@ -194,7 +194,7 @@ export class SignalsService {
     private createUpdateRequest(prevRequestId = 0, prevResponseId = 0) {
         const requestId = this.getNextRequestId(prevRequestId, prevResponseId);
         this.updateRequest = {
-            sessionId: this.sessionService.sessionId,
+            sessionId: this.sessionService.getSessionId(),
             clientId: this.sessionService.getClientId(),
             requestId: requestId
         };
@@ -276,7 +276,7 @@ export class SignalsService {
         }
 
         this.logger.logger.info(`Registering signals: ${signalNames}`);
-        const sessionId = this.sessionService.sessionId;
+        const sessionId = this.sessionService.getSessionId();
         const clientId = this.sessionService.getClientId();
         try {
             const results = await this.signalsApi.registerSignals(sessionId, clientId, signalNames);

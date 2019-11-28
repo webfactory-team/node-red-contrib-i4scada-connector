@@ -41,7 +41,8 @@ export class SecurityApi {
         return data.d;
     }
 
-    public async login(sessionId: string, clientId: string, userName: string, password: string, isDomainUser: boolean, timeOut: number): Promise<string> {
+    public async login(sessionId: string, clientId: string, userName: string, password: string, isDomainUser: boolean, millisecondsTimeOut: number): Promise<string> {
+        this.logger.logger.info(`${this.securityServiceUrl}/Login`);
         const data = await request.post(`${this.securityServiceUrl}/Login`, {
             json: true, body: {
                 sessionId: sessionId,
@@ -49,47 +50,47 @@ export class SecurityApi {
                 userName: userName,
                 password: password,
                 isDomainUser: isDomainUser,
-                millisecondsTimeOut: timeOut
+                millisecondsTimeOut: millisecondsTimeOut
             }
         });
         return data.d;
     }
 
-    public async isUserLoggedIn(securityToken: string, timeOut: number): Promise<boolean> {
+    public async isUserLoggedIn(securityToken: string, millisecondsTimeOut: number): Promise<boolean> {
         const data = await request.post(`${this.securityServiceUrl}/IsUserLoggedIn`, {
             json: true, body: {
                 securityToken: securityToken,
-                timeOut: timeOut
+                millisecondsTimeOut: millisecondsTimeOut
             }
         });
         return data.d;
     }
 
-    public async logout(securityToken: string, timeOut: number): Promise<boolean> {
+    public async logout(securityToken: string, millisecondsTimeOut: number): Promise<boolean> {
         const data = await request.post(`${this.securityServiceUrl}/LogoutByToken`, {
             json: true, body: {
                 securityToken: securityToken,
-                timeOut: timeOut
+                millisecondsTimeOut: millisecondsTimeOut
             }
         });
         return data.d;
     }
 
-    public async getCurrentLoggedInUser(securityToken: string, timeOut: number): Promise<UserDTO> {
+    public async getCurrentLoggedInUser(securityToken: string, millisecondsTimeOut: number): Promise<UserDTO> {
         const data = await request.post(`${this.securityServiceUrl}/GetCurrentLoggedInUser`, {
             json: true, body: {
                 securityToken: securityToken,
-                timeOut: timeOut
+                millisecondsTimeOut: millisecondsTimeOut
             }
         });
         return data.d;
     }
 
-    public async getCurrentUserAuthorizations(securityToken: string, timeOut: number): Promise<UserAuthorizationInfo> {
+    public async getCurrentUserAuthorizations(securityToken: string, millisecondsTimeOut: number): Promise<UserAuthorizationInfo> {
         const data = await request.post(`${this.securityServiceUrl}/GetCurrentUserAuthorizations`, {
             json: true, body: {
                 securityToken: securityToken,
-                timeOut: timeOut
+                CurrentUserAuthorizations: millisecondsTimeOut
             }
         });
         return data.d;

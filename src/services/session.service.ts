@@ -7,15 +7,15 @@ import { i4Logger } from "../logger/logger";
 @injectable()
 export class SessionService {
 
-    public readonly timeOut = 10000;
+    public readonly millisecondsTimeOut = 10000;
     public currentLoggedInUser: string = null;
     public currentLoggedInUserIsDomainUser: boolean = false;
 
-    public get sessionId() {
+    public getSessionId() {
         return this.tokenPersistentService.getSessionId();
     }
 
-    public set sessionId(id: string) {
+    public setSessionId(id: string) {
         this.tokenPersistentService.setSessionId(id);
     }
 
@@ -47,6 +47,7 @@ export class SessionService {
     }
 
     public clearSecureSession() {
+        this.logger.logger.info("UclearSecureSession - clearSecureSession");
         this.tokenPersistentService.clearSecureSession();
         this.currentLoggedInUser = null;
     }
@@ -66,14 +67,15 @@ export class SessionService {
             return null;
         }
 
-        const isLoggedIn = await this.securityApi.isUserLoggedIn(securityToken, this.timeOut);
+        const isLoggedIn = await this.securityApi.isUserLoggedIn(securityToken, this.millisecondsTimeOut);
+        this.logger.logger.warn("isLoggedIn " + isLoggedIn);
 
         if (!isLoggedIn) {
             this.clearSecureSession();
             return null;
         }
 
-        const user = await this.securityApi.getCurrentLoggedInUser(securityToken, this.timeOut);
+        const user = await this.securityApi.getCurrentLoggedInUser(securityToken, this.millisecondsTimeOut);
 
         if (this.currentLoggedInUser !== user.Name) {
             this.currentLoggedInUser = user.Name;
@@ -82,18 +84,20 @@ export class SessionService {
         }
 
         this.currentLoggedInUserIsDomainUser = user.IsADUser;
+        
         return user.Name;
     }
 
 
     public async getCurrentUserAuthorizations() {
         const securityToken = this.getSecurityToken();
+
         if (!securityToken || !this.currentLoggedInUser) {
             this.logger.logger.info("There is no user currently logged in");
             return null;
         }
 
-        const authorizations = await this.securityApi.getCurrentUserAuthorizations(securityToken, this.timeOut);
+        const authorizations = await this.securityApi.getCurrentUserAuthorizations(securityToken, this.millisecondsTimeOut);
 
         if (!authorizations) {
             this.clearSecureSession();

@@ -12,7 +12,7 @@ import { i4Logger } from "../logger/logger";
 export class ConnectorService {
 
     private session: SessionDTO;
-    private sessionPromise: Promise<SessionDTO>;
+    private sessionPromise: Promise<SessionDTO> = null;
 
     constructor(
         @inject(SecurityApi) private readonly securityApi: SecurityApi,
@@ -28,7 +28,7 @@ export class ConnectorService {
     public async disconnect() {
         try {
             this.logger.logger.info("disconnect deleting session.")
-            await this.signalsApi.disconnect(this.sessionService.sessionId);
+            await this.signalsApi.disconnect(this.sessionService.getSessionId());
         } catch (error) {
             this.logger.logger.error(error);
         }
@@ -48,9 +48,9 @@ export class ConnectorService {
         }
     }
 
-    public connect(serverUrl: string = null) {
+    public async connect(serverUrl: string = null) {
         this.setUrl(serverUrl);
-        if (this.sessionPromise)
+        if (this.sessionPromise !== null)
             return this.sessionPromise;
         this.sessionPromise = this.connectBase();
         return this.sessionPromise;
@@ -64,7 +64,7 @@ export class ConnectorService {
                 if (securityToken) {
                     this.logger.logger.info("Updating session");
                     const session = await this.securityApi.connectWithToken(securityToken, []);
-                    this.session = this.updateSession(session);
+                    this.session = await this.updateSession(session);
                     this.logger.logger.info("Session updated");
                 } else {
                     this.logger.logger.info("Creating session");
@@ -85,18 +85,18 @@ export class ConnectorService {
     }
 
 
-    private updateSession(sessionData: SecuritySessionDTO) {
+    private async updateSession(sessionData: SecuritySessionDTO) {
         this.validateLicense(sessionData.Session);
         this.initializeSession(sessionData.Session);
         this.sessionService.setSecurityToken(sessionData.SecurityToken);
-        this.sessionService.updateSessionInformation();
-        this.logger.logger.info(`Session updated, sessionId: '${this.sessionService.sessionId}'`);
+        await this.sessionService.updateSessionInformation();
+        this.logger.logger.info(`Session updated, sessionId: '${this.sessionService.getSessionId()}'`);
         return sessionData.Session;
     }
 
 
     private initializeSession(session: SessionDTO) {
-        this.sessionService.sessionId = session.SessionId;
+        this.sessionService.setSessionId(session.SessionId);
         return session;
     }
 

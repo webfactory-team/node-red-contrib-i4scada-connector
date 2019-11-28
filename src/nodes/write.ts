@@ -5,7 +5,6 @@ import _ = require("underscore");
 import { TokenFlowPersistentService } from "../services/token-persistent.service";
 import { i4Logger, NodeRedTransport } from "../logger/logger";
 
-
 export = function (RED) {
     "use strict";
 
@@ -27,17 +26,15 @@ export = function (RED) {
             return;
 
         const credentials = RED.nodes.getCredentials(n.server);
-
         const username = credentials.username;
         const password = credentials.password;
 
         connector.connect(this.server.host, 5000, username, password).then(() => {
             node.on('input', async (msg) => {
-
                 node.status({ fill: "", shape: "dot", text: "" });
+
                 if ("topic" in msg && "payload" in msg) {
                     try {
-
                         let result = await connector.writesAsync([{ key: msg.topic, value: msg.payload }]);
                         if (result.successful === true) {
                             node.status({ fill: "green", shape: "dot", text: "write successful" });
@@ -45,19 +42,20 @@ export = function (RED) {
                             node.status({ fill: "red", shape: "dot", text: "write failed" });
                         }
                     } catch (error) {
+                        logger.logger.error(error);
                         node.status({ fill: "red", shape: "dot", text: "write failed: " + error });
-                    } finally {
-
                     }
-
                 }
-            });
-        })
-
+            })
+        });
 
         node.on("close", async (done: () => void) => {
             connector.unsubscribe();
-            await connector.disconnect();
+            try {
+                await connector.disconnect();
+            } catch (error) {
+                logger.logger.error(error);
+            }
             _.delay(() => {
                 persistence.dispose();
                 logger.logger.remove(customLogger);

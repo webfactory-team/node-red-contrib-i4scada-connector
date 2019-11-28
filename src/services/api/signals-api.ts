@@ -112,11 +112,11 @@ export class SignalsApi {
         return data.d;
     }
 
-    public async writeSecuredSignals(securityToken: string, sessionId: string, values: KeyValuePair<string, any>[]): Promise<number[]> {
+    public async writeSecuredSignals(securityToken: string, clientId: string, values: KeyValuePair<string, any>[]): Promise<number[]> {
         const data = await request.post(`${this.signalServiceUrl}/WriteSecuredSignalsByToken`, {
             json: true, body: {
                 securityToken: securityToken,
-                sessionId: sessionId,
+                clientId: clientId,
                 values: values
             }
         });

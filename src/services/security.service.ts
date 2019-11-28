@@ -11,7 +11,7 @@ import { i4Logger } from "../logger/logger";
 @injectable()
 export class SecurityService {
 
-    public readonly timeOut = 10000;
+    public readonly millisecondsTimeOut = 10000;
 
     constructor(
         @inject(SecurityApi) private readonly securityApi: SecurityApi,
@@ -26,7 +26,6 @@ export class SecurityService {
 
     public async login(userName: string, password: string, isDomainUser: boolean) {
         try {
-            this.sessionService.clearSecureSession();
             await this.connectorService.connect();
             this.logger.logger.info(`Logging in client ID: ${this.sessionService.getClientId()}`);
             await this.performLogin(userName, password, isDomainUser);
@@ -38,9 +37,8 @@ export class SecurityService {
 
     public async loginWindowsUser() {
         try {
-            this.sessionService.clearSecureSession();
             await this.connectorService.connect();
-            const token = await this.ntlmApi.loginWindowsUser(this.sessionService.sessionId, this.sessionService.getClientId(), this.timeOut);
+            const token = await this.ntlmApi.loginWindowsUser(this.sessionService.getSessionId(), this.sessionService.getClientId(), this.millisecondsTimeOut);
             return await this.executeAfterLogin(token);
         } catch (error) {
             this.logger.logger.error(error);
@@ -52,10 +50,10 @@ export class SecurityService {
             if (this.sessionService.getSecurityToken()) {
                 this.logger.logger.info("logout");
                 try {
-                    const status = await this.securityApi.logout(this.sessionService.getSecurityToken(), this.timeOut);
+                    const status = await this.securityApi.logout(this.sessionService.getSecurityToken(), this.millisecondsTimeOut);
                     if (status) {
                         this.logger.logger.info("Logout successful")
-                        this.sessionService.clearSecureSession();
+                        this.sessionService.setSecurityToken(null);
                         return true;
                     }
                     this.logger.logger.info("Logout failed");
@@ -72,7 +70,7 @@ export class SecurityService {
 
     private async performLogin(userName: string, password: string, isDomainUser: boolean) {
         try {
-            const token = await this.securityApi.login(this.sessionService.sessionId, this.sessionService.getClientId(), userName, password, isDomainUser, this.timeOut);
+            const token = await this.securityApi.login(this.sessionService.getSessionId(), this.sessionService.getClientId(), userName, password, isDomainUser, this.millisecondsTimeOut);
             await this.executeAfterLogin(token);
         } catch (error) {
             this.logger.logger.error(error);
@@ -127,7 +125,7 @@ export class SecurityService {
         this.signalsService.getOnlineUpdates();
 
         var subscription = sessionSignal.subscribe((newValue) => {
-            if (!newValue.value) {
+            if (newValue.value == null && newValue.value !== undefined) {
                 this.sessionService.clearSecureSession();
                 subscription.unsubscribe();
             }

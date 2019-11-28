@@ -30,12 +30,12 @@ export class NtlmApi {
         this.serverUrl = serverUrl || "https://demo.i4scada.de";
     }
 
-    public async loginWindowsUser(sessionId: string, clientId: string, timeOut: number): Promise<any> {
+    public async loginWindowsUser(sessionId: string, clientId: string, millisecondsTimeOut: number): Promise<any> {
         const data = await request.post(`${this.ntlmServiceUrl}/LoginWindowsUser`, {
             json: true, body: {
                 sessionId: sessionId,
                 clientId: clientId,
-                millisecondsTimeOut: timeOut
+                millisecondsTimeOut: millisecondsTimeOut
             }
         });
         return data.d;

@@ -30,10 +30,10 @@ export class i4Facade {
     }
 
     public async connect(url: string, pollInterval: number, userName: string = null, password: string = null) {
-        if (userName && password) {
-            this.connectorFacade.login(userName, password);
-        }
         await this.connectorFacade.connect(url, pollInterval);
+        if (userName && password) {
+            await this.connectorFacade.login(userName, password);
+        }
     }
 
     public async getOnlineUpdates() {
