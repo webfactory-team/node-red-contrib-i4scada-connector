@@ -52,7 +52,7 @@ export = function (RED) {
         node.on("close", async (done: () => void) => {
             connector.unsubscribe();
             try {
-                await connector.disconnect();
+                await connector.disconnect(); 
             } catch (error) {
                 logger.logger.error(error);
             }

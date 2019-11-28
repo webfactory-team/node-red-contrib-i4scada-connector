@@ -47,7 +47,6 @@ export class SessionService {
     }
 
     public clearSecureSession() {
-        this.logger.logger.info("UclearSecureSession - clearSecureSession");
         this.tokenPersistentService.clearSecureSession();
         this.currentLoggedInUser = null;
     }

@@ -47,7 +47,7 @@ export class SignalsService {
         @inject(i4Logger) private readonly logger: i4Logger
     ) {
         this.unregisterQueue
-            .pipe(bufferTime(50))
+            .pipe(bufferTime(10))
             .subscribe(async (names) => {
                 if (names.length <= 0)
                     return;
@@ -338,6 +338,9 @@ export class SignalsService {
     }
 
     public dispose() {
+        if (this.timer)
+            clearTimeout(this.timer);
+
         this.unregisterQueue.unsubscribe();
         this.connectionStatusQueue.unsubscribe();
     }

@@ -48,8 +48,13 @@ export = function (RED) {
         node.on("close", async (done: () => void) => {
             subscription.unsubscribe();
             connector.unsubscribe();
-            await connector.disconnect();
+            try {
+                await connector.disconnect(); 
+            } catch (error) {
+                logger.logger.error(error);
+            }
             _.delay(() => {
+                persistence.dispose();
                 logger.logger.remove(customLogger);
                 done();
             }, 1000);
