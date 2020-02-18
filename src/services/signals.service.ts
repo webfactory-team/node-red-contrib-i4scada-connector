@@ -76,7 +76,7 @@ export class SignalsService {
     }
 
     public async writeSignals(signalValues: KeyValuePair<string, any>[]) {
-        this.logger.logger.info(`Write signals: ${signalValues.map(signal => signal.key).join()}`);
+        this.logger.logger.info(`Write signals: ${signalValues.map(signal => signal.key).join()}, values: ${signalValues.map(signal => signal.value).join()}`);
 
         const securityToken = this.sessionService.getSecurityToken();
         const currentUser = this.sessionService.currentLoggedInUser;
@@ -189,7 +189,6 @@ export class SignalsService {
 
         }
     }
-
 
     private createUpdateRequest(prevRequestId = 0, prevResponseId = 0) {
         const requestId = this.getNextRequestId(prevRequestId, prevResponseId);

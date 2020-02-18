@@ -29,10 +29,11 @@ export = function (RED) {
         const username = credentials.username;
         const password = credentials.password;
 
-        connector.connect(this.server.host, 5000, username, password).then(() => {
+        node.status({ fill: "yellow", shape: "ring", text: "connecting" });
+        connector.connect(this.server.host, 500, username, password).then(() => {
+            node.status({ fill: "green", shape: "ring", text: "waiting for messages" });
             node.on('input', async (msg) => {
-                node.status({ fill: "", shape: "dot", text: "" });
-
+                node.status({ fill: "green", shape: "ring", text: "writing" });
                 if ("topic" in msg && "payload" in msg) {
                     try {
                         let result = await connector.writesAsync([{ key: msg.topic, value: msg.payload }]);
@@ -52,7 +53,7 @@ export = function (RED) {
         node.on("close", async (done: () => void) => {
             connector.unsubscribe();
             try {
-                await connector.disconnect(); 
+                await connector.disconnect();
             } catch (error) {
                 logger.logger.error(error);
             }
