@@ -40,7 +40,7 @@ export = function (RED) {
                         if (result.successful === true) {
                             node.status({ fill: "green", shape: "dot", text: "write successful" });
                         } else {
-                            node.status({ fill: "red", shape: "dot", text: "write failed" });
+                            node.status({ fill: "red", shape: "dot", text: "write failed" + result.errorMessage });
                         }
                     } catch (error) {
                         logger.logger.error(error);

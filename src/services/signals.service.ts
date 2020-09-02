@@ -159,23 +159,32 @@ export class SignalsService {
     }
 
     private handleWriteResponse(response: number[]): ActionResult {
-        const errorCode = response.find(x => { return !!x });
-        if (!errorCode) {
-            return {
-                errorMessage: null,
-                exception: null,
-                successful: true
-            };
-        } else {
+        if (response && _.isArray(response)) {
+            const errorCode = response.find(x => { return !!x });
+            if (!errorCode) {
+                return {
+                    errorMessage: "no error code available",
+                    exception: null,
+                    successful: true
+                };
+            } else {
 
-            let translation = "";
+                let translation = "failed with error code";
 
-            for (let errorCode of response) {
-                let errorKey: any = errorCode.toString();
+                for (let errorCode of response) {
+                    let errorKey: any = errorCode.toString();
+                }
+
+                return {
+                    errorMessage: translation,
+                    exception: null,
+                    successful: false
+                };
             }
-
+        }
+        else {
             return {
-                errorMessage: translation,
+                errorMessage: "unknown error code",
                 exception: null,
                 successful: false
             };
