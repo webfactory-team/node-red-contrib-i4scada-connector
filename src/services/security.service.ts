@@ -5,44 +5,43 @@ import { SessionService } from "./session.service";
 import { FunctionResultDTO } from "./models/dto/function-result.dto";
 import _ from "underscore";
 import { SignalsService } from "./signals.service";
-import { ConnectorService } from "./connector.service";
 import { i4Logger } from "../logger/logger";
+import { Subscription, Subject } from "rxjs";
+
+export enum SecurityStatus {
+    Authenticating,
+    Authenticated,
+    AuthenticationError,
+    RemoteLogout
+}
 
 @injectable()
 export class SecurityService {
 
     public readonly millisecondsTimeOut = 10000;
+    private sessionSignalSubscription: Subscription;
+    public readonly securityStatusQueue = new Subject<SecurityStatus>();
 
     constructor(
         @inject(SecurityApi) private readonly securityApi: SecurityApi,
         @inject(NtlmApi) private readonly ntlmApi: NtlmApi,
         @inject(SessionService) private readonly sessionService: SessionService,
         @inject(SignalsService) private readonly signalsService: SignalsService,
-        @inject(ConnectorService) private readonly connectorService: ConnectorService,
         @inject(i4Logger) private readonly logger: i4Logger,
     ) {
 
     }
 
     public async login(userName: string, password: string, isDomainUser: boolean) {
-        try {
-            await this.connectorService.connect();
-            this.logger.logger.info(`Logging in client ID: ${this.sessionService.getClientId()}`);
-            await this.performLogin(userName, password, isDomainUser);
-            await this.sessionService.getCurrentUserAuthorizations();
-        } catch (error) {
-            this.logger.logger.error(error);
+        this.logger.logger.info(`Logging in client ID: ${this.sessionService.getClientId()}`);
+        this.securityStatusQueue.next(SecurityStatus.Authenticating);
+        const result = await this.performLogin(userName, password, isDomainUser);
+        if (!result) {
+            this.securityStatusQueue.next(SecurityStatus.AuthenticationError);
+            throw "Login failed";
         }
-    }
-
-    public async loginWindowsUser() {
-        try {
-            await this.connectorService.connect();
-            const token = await this.ntlmApi.loginWindowsUser(this.sessionService.getSessionId(), this.sessionService.getClientId(), this.millisecondsTimeOut);
-            return await this.executeAfterLogin(token);
-        } catch (error) {
-            this.logger.logger.error(error);
-        }
+        this.securityStatusQueue.next(SecurityStatus.Authenticated);
+        await this.sessionService.getCurrentUserAuthorizations();
     }
 
     public async logout() {
@@ -53,7 +52,6 @@ export class SecurityService {
                     const status = await this.securityApi.logout(this.sessionService.getSecurityToken(), this.millisecondsTimeOut);
                     if (status) {
                         this.logger.logger.info("Logout successful")
-                        this.sessionService.setSecurityToken(null);
                         return true;
                     }
                     this.logger.logger.info("Logout failed");
@@ -61,6 +59,8 @@ export class SecurityService {
                 } catch (error) {
                     this.logger.logger.error(error);
                     return false;
+                } finally {
+                    this.sessionService.setSecurityToken(null);
                 }
             }
         } catch (error) {
@@ -71,7 +71,7 @@ export class SecurityService {
     private async performLogin(userName: string, password: string, isDomainUser: boolean) {
         try {
             const token = await this.securityApi.login(this.sessionService.getSessionId(), this.sessionService.getClientId(), userName, password, isDomainUser, this.millisecondsTimeOut);
-            await this.executeAfterLogin(token);
+            return await this.executeAfterLogin(token);
         } catch (error) {
             this.logger.logger.error(error);
         }
@@ -119,15 +119,24 @@ export class SecurityService {
         this.logger.logger.error(`Login failed with code: ${errorCode}`);
     }
 
+    public stop() {
+        this.sessionSignalSubscription.unsubscribe();
+    }
+
+    public dispose() {
+        this.securityStatusQueue.unsubscribe();
+    }
+
     private startSignalUpdate() {
         var projectName = "\\DefaultProject";
         const sessionSignal = this.signalsService.getSignal(`WFSInternal_Session_${this.sessionService.getClientId()}${projectName}`);
         this.signalsService.getOnlineUpdates();
 
-        var subscription = sessionSignal.subscribe((newValue) => {
+        this.sessionSignalSubscription = sessionSignal.subscribe((newValue) => {
             if (newValue.value == null && newValue.value !== undefined) {
+                this.stop();
                 this.sessionService.clearSecureSession();
-                subscription.unsubscribe();
+                this.securityStatusQueue.next(SecurityStatus.RemoteLogout);
             }
         });
     }

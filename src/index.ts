@@ -1,14 +1,33 @@
-// import "reflect-metadata";
-// import { myContainer } from "./inversify.config";
-// // import { i4Facade } from "./i4-facade";
-// import { ConnectorFacade } from "./connector-facade";
+import "reflect-metadata";
+import { IoCContainer } from "./inversify.config";
+import { ConnectorFacade } from "./connector-facade";
+import { TestTokenFlowsPersistentService } from "./services/test-token-persistent.service";
+import { i4Logger } from "./logger/logger";
+import { transports, format } from "winston";
 
-// const connector = myContainer.get<ConnectorFacade>(ConnectorFacade);
+const container = IoCContainer.getContainer();
+container.bind("ITokenPersistentService").toConstantValue(new TestTokenFlowsPersistentService());
 
-// test();
+let logger = container.get<i4Logger>(i4Logger);
+logger.logger.add(new transports.Console({
+    format: format.simple(),
+}));
+const connector = container.get<ConnectorFacade>(ConnectorFacade);
 
-// async function test() {
-//     await connector.connect();
-//     const test = await connector.getGroupNames({ GroupNames: [], ServerNames: [] }, 0, 100);
-//     console.log(test);
-// }
+
+start();
+logger.logger.log("info", "started!");
+
+async function start() {
+    try {
+        await connector.connect("http://localhost", 500, "admin", "w", null);
+        connector.publish = (signalUpdate) => {
+            logger.logger.log("info", signalUpdate.value);
+        }
+        await connector.getSignals(["Local Second"]);
+        connector.getOnlineUpdates();
+    } catch (error) {
+        logger.logger.error(error);
+    }
+
+}

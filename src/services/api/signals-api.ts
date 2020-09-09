@@ -24,7 +24,7 @@ export class SignalsApi {
 
     }
 
-    private serverUrl = "https://demo.i4scada.de";
+    private serverUrl = "http://localhost";
 
     private get serviceUrl() {
         return this.serverUrl + "/_SERVICES/WebServices/WCF"
@@ -35,7 +35,7 @@ export class SignalsApi {
     }
 
     public set url(serverUrl: string) {
-        this.serverUrl = serverUrl || "https://demo.i4scada.de";
+        this.serverUrl = serverUrl || "http://localhost";
     }
 
 
@@ -46,7 +46,7 @@ export class SignalsApi {
     }
 
     public async disconnect(sessionId: string): Promise<void> {
-        this.logger.logger.debug(`connect`);
+        this.logger.logger.debug(`disconnect`);
         await request.post(`${this.signalServiceUrl}/Disconnect`, {
             json: true, body: {
                 sessionId: sessionId
@@ -87,10 +87,12 @@ export class SignalsApi {
                 requestId: requestId
             }
         });
+        this.logger.logger.info(JSON.stringify(data));
         return data.d;
     }
 
     public async readSignals(sessionId: string, clientId: string, signalNames: string[]): Promise<SignalValueDTO[]> {
+        this.logger.logger.debug(`readSignals`);
         const data = await request.post(`${this.signalServiceUrl}/ReadSignals`, {
             json: true, body: {
                 sessionId: sessionId,
@@ -102,6 +104,7 @@ export class SignalsApi {
     }
 
     public async writeUnsecuredSignals(sessionId: string, clientId: string, values: KeyValuePair<string, any>[]): Promise<number[]> {
+        this.logger.logger.debug(`writeUnsecuredSignals`);
         const data = await request.post(`${this.signalServiceUrl}/WriteUnsecuredSignals`, {
             json: true, body: {
                 clientId: clientId,
@@ -113,6 +116,7 @@ export class SignalsApi {
     }
 
     public async writeSecuredSignals(securityToken: string, clientId: string, values: KeyValuePair<string, any>[]): Promise<number[]> {
+        this.logger.logger.debug(`writeSecuredSignals`);
         const data = await request.post(`${this.signalServiceUrl}/WriteSecuredSignalsByToken`, {
             json: true, body: {
                 securityToken: securityToken,
@@ -124,6 +128,7 @@ export class SignalsApi {
     }
 
     public async getSignalDefinitions(sessionId: string, clientId: string, userName: string, isDomainUser: boolean, filter: GetSignalDefinitionsFilterDTO, languageId: number, start: number, count: number, timeOut: number): Promise<SignalDefinitionDTO[]> {
+        this.logger.logger.debug(`getSignalDefinitions`);
         const data = await request.post(`${this.signalServiceUrl}/GetSignalDefinitions`, {
             json: true,
             body: {
@@ -142,6 +147,7 @@ export class SignalsApi {
     }
 
     public async getSignalDefinitionsByToken(securityToken: string, filter: GetSignalDefinitionsFilterDTO, languageId: number, start: number, count: number, timeOut: number): Promise<SignalDefinitionDTO[]> {
+        this.logger.logger.debug(`getSignalDefinitionsByToken`);
         const data = await request.post(`${this.signalServiceUrl}/GetSignalDefinitionsByToken`, {
             json: true,
             body: {
@@ -157,6 +163,7 @@ export class SignalsApi {
     }
 
     public async getGroupNames(sessionId: string, clientId: string, userName: string, isDomainUser: boolean, filter: GetGroupNamesFilterDTO, languageId: number, start: number, count: number, timeOut: number): Promise<DescriptionDTO[]> {
+        this.logger.logger.debug(`getGroupNames`);
         const data = await request.post(`${this.signalServiceUrl}/GetGroupNames`, {
             json: true,
             body: {
@@ -175,6 +182,7 @@ export class SignalsApi {
     }
 
     public async getGroupNamesByToken(securityToken: string, filter: GetGroupNamesFilterDTO, languageId: number, start: number, count: number, timeOut: number): Promise<DescriptionDTO[]> {
+        this.logger.logger.debug(`getGroupNamesByToken`);
         const data = await request.post(`${this.signalServiceUrl}/GetGroupNamesByToken`, {
             json: true,
             body: {
@@ -190,6 +198,7 @@ export class SignalsApi {
     }
 
     public async getSignalNames(sessionId: string, clientId: string, userName: string, isDomainUser: boolean, filter: GetSignalNamesFilterDTO, start: number, count: number, timeOut: number): Promise<NameDTO[]> {
+        this.logger.logger.debug(`getSignalNames`);
         const data = await request.post(`${this.signalServiceUrl}/GetSignalNames`, {
             json: true,
             body: {
@@ -207,6 +216,7 @@ export class SignalsApi {
     }
 
     public async getSignalNamesByToken(securityToken: string, filter: GetSignalNamesFilterDTO, start: number, count: number, timeOut: number): Promise<NameDTO[]> {
+        this.logger.logger.debug(`getSignalNamesByToken`);
         const data = await request.post(`${this.signalServiceUrl}/GetSignalNamesByToken`, {
             json: true,
             body: {

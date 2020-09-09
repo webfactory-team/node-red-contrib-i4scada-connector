@@ -7,12 +7,22 @@ import { SessionService } from "./session.service";
 import { AlarmsApi } from "./api/alarms-api";
 import { SecuritySessionDTO } from "./models/dto/security-session.dto";
 import { i4Logger } from "../logger/logger";
+import { Subject } from "rxjs";
+
+export enum ConnectorStatus {
+    Connecting,
+    Connected,
+    Disconeting,
+    Disconnected,
+    Canceled,
+    ConnectionError
+}
 
 @injectable()
 export class ConnectorService {
 
-    private session: SessionDTO;
     private sessionPromise: Promise<SessionDTO> = null;
+    public readonly connectorStatusQueue = new Subject<ConnectorStatus>();
 
     constructor(
         @inject(SecurityApi) private readonly securityApi: SecurityApi,
@@ -27,16 +37,22 @@ export class ConnectorService {
 
     public async disconnect() {
         try {
-            this.logger.logger.info("disconnect deleting session.")
+            this.logger.logger.info("disconnecting")
+            this.connectorStatusQueue.next(ConnectorStatus.Disconeting);
             await this.signalsApi.disconnect(this.sessionService.getSessionId());
+            this.connectorStatusQueue.next(ConnectorStatus.Disconnected);
         } catch (error) {
             this.logger.logger.error(error);
+            this.connectorStatusQueue.next(ConnectorStatus.ConnectionError);
         }
         finally {
             this.sessionService.clearSecureSession();
-            this.session = null;
             this.sessionPromise = null;
         }
+    }
+
+    public dispose() {
+        this.connectorStatusQueue.unsubscribe();
     }
 
     public setUrl(serverUrl: string = null) {
@@ -49,31 +65,36 @@ export class ConnectorService {
     }
 
     public async connect(serverUrl: string = null) {
+        this.logger.logger.debug("Connect");
         this.setUrl(serverUrl);
-        if (this.sessionPromise !== null)
+        if (this.sessionPromise !== null) {
+            this.logger.logger.debug("Connect are currently running");
             return this.sessionPromise;
+        }
+        this.connectorStatusQueue.next(ConnectorStatus.Connecting);
         this.sessionPromise = this.connectBase();
+        this.connectorStatusQueue.next(ConnectorStatus.Connected);
         return this.sessionPromise;
     }
 
 
     private async connectBase() {
+        this.logger.logger.debug("connectBase");
+        const sessionId = this.sessionService.getSessionId();
         try {
-            if (!this.session) {
+            if (!sessionId) {
                 const securityToken = this.sessionService.getSecurityToken();
                 if (securityToken) {
                     this.logger.logger.info("Updating session");
                     const session = await this.securityApi.connectWithToken(securityToken, []);
-                    this.session = await this.updateSession(session);
-                    this.logger.logger.info("Session updated");
+                    await this.updateSession(session);
                 } else {
                     this.logger.logger.info("Creating session");
                     let session = await this.signalsApi.connect();
-                    session = this.validateLicense(session);
-                    session = this.initializeSession(session);
-                    this.session = session;
-                    this.logger.logger.info("Session created");
+                    this.createSession(session);
                 }
+            } else {
+                this.logger.logger.debug("Session already exsist");
             }
         } catch (error) {
             this.logger.logger.error(error);
@@ -81,31 +102,21 @@ export class ConnectorService {
         finally {
             this.sessionPromise = null;
         }
-        return this.session;
+        return {
+            IsValidLicense: true,
+            SessionId: this.sessionService.getSessionId()
+        } as SessionDTO;
     }
-
 
     private async updateSession(sessionData: SecuritySessionDTO) {
-        this.validateLicense(sessionData.Session);
-        this.initializeSession(sessionData.Session);
+        this.sessionService.setSessionId(sessionData.Session.SessionId);
         this.sessionService.setSecurityToken(sessionData.SecurityToken);
         await this.sessionService.updateSessionInformation();
-        this.logger.logger.info(`Session updated, sessionId: '${this.sessionService.getSessionId()}'`);
-        return sessionData.Session;
+        this.logger.logger.info(`Session updated, sessionId: '${sessionData.Session.SessionId}'`);
     }
 
-
-    private initializeSession(session: SessionDTO) {
+    private async createSession(session: SessionDTO) {
         this.sessionService.setSessionId(session.SessionId);
-        return session;
+        this.logger.logger.info("Session created");
     }
-
-    private validateLicense(session: SessionDTO) {
-
-        if (!session.IsValidLicense) {
-            throw "Invalid license";
-        }
-        return session;
-    }
-
 }

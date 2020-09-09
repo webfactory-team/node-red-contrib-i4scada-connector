@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import { i4Facade } from "../i4-facade";
 import _ = require("underscore");
 import { TokenFlowPersistentService } from "../services/token-persistent.service";
 import { i4Logger, NodeRedTransport } from "../logger/logger";
 import { IoCContainer } from "../inversify.config";
+import { ConnectorFacade } from "../connector-facade";
 
 export = function (RED) {
     "use strict";
@@ -14,7 +14,7 @@ export = function (RED) {
         let myContainer = IoCContainer.getContainer();
         let persistence = new TokenFlowPersistentService(node.context());
         myContainer.bind("ITokenPersistentService").toConstantValue(persistence);
-        let connector = myContainer.get<i4Facade>(i4Facade);
+        let connector = myContainer.get<ConnectorFacade>(ConnectorFacade);
         let logger = myContainer.get<i4Logger>(i4Logger);
         let customLogger = new NodeRedTransport(node);
         logger.logger.add(customLogger);
@@ -33,23 +33,20 @@ export = function (RED) {
         const username = credentials.username;
         const password = credentials.password;
 
+        connector.setStatusCallback((x) => node.status(x));
+
         connector.publish = (signalUpdate) => {
             var msg = {} as any;
             msg.topic = signalUpdate.key;
             msg.payload = signalUpdate.value;
             node.send(msg);
         }
-        const subscription = connector.connectionStatusQueue.subscribe((value) => {
-            const fill = value ? "green" : "red";
-            const text = value ? "connected" : "disconnected";
-            node.status({ fill: fill, shape: "dot", text: text });
-        });
+
+        connect(this.server.host, this.server.pollInterval, this.signals, this.count, username, password);
 
         node.on("close", async (done: () => void) => {
-            subscription.unsubscribe();
-            connector.unsubscribe();
             try {
-                await connector.disconnect(); 
+                await connector.dispose();
             } catch (error) {
                 logger.logger.error(error);
             }
@@ -60,15 +57,13 @@ export = function (RED) {
             }, 1000);
         });
 
-        connect(this.server.host, this.server.pollInterval, this.signals, this.count, username, password);
-
         async function connect(uri: string, pollInterval: number, signals: string[], count: number, userName: string, password: string) {
             try {
-                await connector.connect(uri, pollInterval, userName, password);
+                await connector.connect(uri, pollInterval, userName, password, null);
                 await connector.getSignals(signals, count);
                 await connector.getOnlineUpdates();
             } catch (error) {
-
+                logger.logger.error(error);
             }
         }
     }
@@ -98,10 +93,10 @@ export = function (RED) {
         logger.logger.add(customLogger);
         let persistence = new TokenFlowPersistentService(server.context());
         myContainer.bind("ITokenPersistentService").toConstantValue(persistence);
-        let connector = myContainer.get<i4Facade>(i4Facade);
+        let connector = myContainer.get<ConnectorFacade>(ConnectorFacade);
 
         try {
-            await connector.connect(host, pollInterval, username, password);
+            await connector.connect(host, pollInterval, username, password, 3);
             res.json(await connector.getSignalDefinitions(signals, count, start));
             await connector.disconnect();
         } catch (error) {

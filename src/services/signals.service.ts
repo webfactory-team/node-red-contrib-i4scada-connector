@@ -25,12 +25,20 @@ interface IUpdateRequest {
     requestId: number;
 }
 
+export enum PollingStatus {
+    Started,
+    Polling,
+    Polled,
+    Stopped,
+    Canceled,
+    PollingError
+}
+
 @injectable()
 export class SignalsService {
 
     private updateInterval = 250;
 
-    private lastUpdateError: string;
     private updateRequest: IUpdateRequest;
     private getUpdates: boolean = false;
     private registeredSignals: Signal[] = [];
@@ -38,7 +46,7 @@ export class SignalsService {
     private timer = null;
 
     private readonly unregisterQueue = new Subject<string>();
-    public readonly connectionStatusQueue = new Subject<boolean>();
+    public readonly pollingStatusQueue = new Subject<PollingStatus>();
 
     constructor(
         @inject(SignalsApi) private readonly signalsApi: SignalsApi,
@@ -61,7 +69,6 @@ export class SignalsService {
                 } catch (error) {
                     this.logger.logger.error(error);
                 }
-
             });
     }
 
@@ -70,7 +77,6 @@ export class SignalsService {
     }
 
     public async readSignals(signalNames: string[]) {
-        await this.connectorService.connect();
         this.logger.logger.debug(`Read signals: ${signalNames.map(signal => signal).join()}`);
         return await this.signalsApi.readSignals(this.sessionService.getSessionId(), this.sessionService.getClientId(), signalNames);
     }
@@ -81,7 +87,6 @@ export class SignalsService {
         const securityToken = this.sessionService.getSecurityToken();
         const currentUser = this.sessionService.currentLoggedInUser;
 
-        await this.connectorService.connect();
         let responseCodes: number[];
         if (securityToken && currentUser) {
             responseCodes = await this.signalsApi.writeSecuredSignals(securityToken, this.sessionService.getClientId(), signalValues);
@@ -92,8 +97,6 @@ export class SignalsService {
     }
 
     public async getSignalDefinitions(filter: GetSignalDefinitionsFilterDTO, start: number, count: number) {
-        await this.connectorService.connect();
-
         const securityToken = this.sessionService.getSecurityToken();
         if (securityToken) {
             return await this.signalsApi.getSignalDefinitionsByToken(securityToken, filter, 7, start, count, this.sessionService.millisecondsTimeOut);
@@ -103,7 +106,6 @@ export class SignalsService {
     }
 
     public async getSignalNames(filter: GetSignalNamesFilterDTO, start: number, count: number) {
-        await this.connectorService.connect();
         const securityToken = this.sessionService.getSecurityToken();
         if (securityToken) {
             return await this.signalsApi.getSignalNamesByToken(securityToken, filter, start, count, this.sessionService.millisecondsTimeOut);
@@ -113,7 +115,6 @@ export class SignalsService {
     }
 
     public async getGroupNames(filter: GetGroupNamesFilterDTO, start: number, count: number) {
-        await this.connectorService.connect();
         const securityToken = this.sessionService.getSecurityToken();
         if (securityToken) {
             return await this.signalsApi.getGroupNamesByToken(securityToken, filter, 7, start, count, this.sessionService.millisecondsTimeOut);
@@ -143,19 +144,7 @@ export class SignalsService {
 
 
     private async unRegisterSignals(names: string[]) {
-        await this.connectorService.connect();
         await this.signalsApi.unregisterSignals(this.sessionService.getSessionId(), this.sessionService.getClientId(), names);
-    }
-
-    public async getOnlineUpdates() {
-        try {
-            await this.connectorService.connect();
-            this.logger.logger.info(`start geting online updates`);
-            await this.registerSignals();
-            await this.startGettingUpdates();
-        } catch (error) {
-            this.logger.logger.error(error);
-        }
     }
 
     private handleWriteResponse(response: number[]): ActionResult {
@@ -193,9 +182,9 @@ export class SignalsService {
 
     private async startGettingUpdates() {
         if (!this.getUpdates) {
+            this.pollingStatusQueue.next(PollingStatus.Started);
             this.createUpdateRequest();
             this.doUpdate();
-
         }
     }
 
@@ -219,19 +208,17 @@ export class SignalsService {
     }
 
     private async doUpdate() {
+        this.pollingStatusQueue.next(PollingStatus.Polling);
         const request = this.updateRequest;
         try {
             this.getUpdates = true;
             this.logger.logger.debug(`getUpdates - sessionId:${request.sessionId} - clientId:${request.clientId} - requestId:${request.requestId}`);
             const update = await this.signalsApi.getUpdates(request.sessionId, request.clientId, request.requestId);
-            this.connectionStatusQueue.next(true);
+            this.pollingStatusQueue.next(PollingStatus.Polled);
             this.updateSignals(update);
         } catch (error) {
-            this.connectionStatusQueue.next(false);
-            if (!this.lastUpdateError) {
-                this.lastUpdateError = error;
-                this.logger.logger.error(error);
-            }
+            this.pollingStatusQueue.next(PollingStatus.PollingError);
+            this.logger.logger.error(error);
             if (this.timer) {
                 clearTimeout(this.timer);
                 this.timer = null;
@@ -241,9 +228,8 @@ export class SignalsService {
     }
 
     private updateSignals(update: SignalUpdateDTO) {
-        this.lastUpdateError = null;
-
         if (!update) {
+            this.pollingStatusQueue.next(PollingStatus.Canceled)
             return;
         }
 
@@ -345,11 +331,33 @@ export class SignalsService {
         return result;
     }
 
-    public dispose() {
-        if (this.timer)
-            clearTimeout(this.timer);
-
-        this.unregisterQueue.unsubscribe();
-        this.connectionStatusQueue.unsubscribe();
+    public async getOnlineUpdates() {
+        try {
+            this.logger.logger.info(`start geting online updates`);
+            await this.registerSignals();
+            await this.startGettingUpdates();
+        } catch (error) {
+            this.logger.logger.error(error);
+        }
     }
+
+    public stop() {
+        this.pollingStatusQueue.next(PollingStatus.Stopped);
+        if (this.timer) {
+            clearTimeout(this.timer);
+            this.timer = null;
+        }
+
+        this.updateRequest = null;
+        this.getUpdates = false;
+
+        this.registeredSignals = [];
+        this.signalsToRegister = [];
+    }
+
+    public dispose() {
+        this.unregisterQueue.unsubscribe();
+        this.pollingStatusQueue.unsubscribe();
+    }
+
 }

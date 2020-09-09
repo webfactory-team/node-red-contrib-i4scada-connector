@@ -21,7 +21,7 @@ export class AlarmsApi {
 
     }
 
-    private serverUrl = "https://demo.i4scada.de";
+    private serverUrl = "http://localhost";
 
     private get serviceUrl() {
         return this.serverUrl + "/_SERVICES/WebServices/WCF"
@@ -32,7 +32,7 @@ export class AlarmsApi {
     }
 
     public set url(serverUrl: string) {
-        this.serverUrl = serverUrl || "https://demo.i4scada.de";
+        this.serverUrl = serverUrl || "http://localhost";
     }
 
     public async getOnlineAlarms(sessionId: string, clientId: string, userName: string, isDomainUser: boolean, filter: AlarmFilterDTO, timeOut: number): Promise<AlarmsDTO> {

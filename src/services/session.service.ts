@@ -8,15 +8,21 @@ import { i4Logger } from "../logger/logger";
 export class SessionService {
 
     public readonly millisecondsTimeOut = 10000;
-    public currentLoggedInUser: string = null;
-    public currentLoggedInUserIsDomainUser: boolean = false;
 
     public getSessionId() {
+        this.logger.logger.debug("Session requested");
         return this.tokenPersistentService.getSessionId();
     }
 
     public setSessionId(id: string) {
         this.tokenPersistentService.setSessionId(id);
+    }
+
+    public get currentLoggedInUser(): string {
+        return this.tokenPersistentService.getCurrentLoggedInUser();
+    }
+    public get currentLoggedInUserIsDomainUser(): boolean {
+        return false;
     }
 
     constructor(
@@ -32,13 +38,16 @@ export class SessionService {
     }
 
     public getClientId() {
+        this.logger.logger.debug("ClientId requested");
         if (!this.tokenPersistentService.getClientId()) {
+            this.logger.logger.debug("Create new ClientId");
             this.tokenPersistentService.setClientId(this.guid());
         }
         return this.tokenPersistentService.getClientId();
     }
 
     public getSecurityToken() {
+        this.logger.logger.debug("SecurityToken requested");
         return this.tokenPersistentService.getSecurityToken();
     }
 
@@ -47,8 +56,8 @@ export class SessionService {
     }
 
     public clearSecureSession() {
+        this.logger.logger.debug("Clearing secured session");
         this.tokenPersistentService.clearSecureSession();
-        this.currentLoggedInUser = null;
     }
 
     public async updateSessionInformation() {
@@ -65,25 +74,22 @@ export class SessionService {
             this.logger.logger.warn("User not logged in in the current session");
             return null;
         }
+        let isLoggedIn = false;
+        try {
+            isLoggedIn = await this.securityApi.isUserLoggedIn(securityToken, this.millisecondsTimeOut);
+        } catch (error) {
+            this.logger.logger.error(error);
+        }
 
-        const isLoggedIn = await this.securityApi.isUserLoggedIn(securityToken, this.millisecondsTimeOut);
         this.logger.logger.warn("isLoggedIn " + isLoggedIn);
 
         if (!isLoggedIn) {
-            this.clearSecureSession();
+            this.tokenPersistentService.setCurrentLoggedInUser(null);
             return null;
         }
 
         const user = await this.securityApi.getCurrentLoggedInUser(securityToken, this.millisecondsTimeOut);
-
-        if (this.currentLoggedInUser !== user.Name) {
-            this.currentLoggedInUser = user.Name;
-        } else {
-
-        }
-
-        this.currentLoggedInUserIsDomainUser = user.IsADUser;
-        
+        this.tokenPersistentService.setCurrentLoggedInUser(user.Name);
         return user.Name;
     }
 
@@ -91,7 +97,7 @@ export class SessionService {
     public async getCurrentUserAuthorizations() {
         const securityToken = this.getSecurityToken();
 
-        if (!securityToken || !this.currentLoggedInUser) {
+        if (!securityToken || !this.tokenPersistentService.getCurrentLoggedInUser()) {
             this.logger.logger.info("There is no user currently logged in");
             return null;
         }
@@ -99,13 +105,11 @@ export class SessionService {
         const authorizations = await this.securityApi.getCurrentUserAuthorizations(securityToken, this.millisecondsTimeOut);
 
         if (!authorizations) {
-            this.clearSecureSession();
+            this.tokenPersistentService.setCurrentLoggedInUser(null);
             return null;
         }
 
         return authorizations;
     }
-
-
 
 }

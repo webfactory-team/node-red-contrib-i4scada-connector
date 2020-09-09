@@ -12,7 +12,7 @@ export class NodeRedTransport extends Transport {
         setImmediate(() => {
             switch (info["level"]) {
                 case "error":
-                    this.logger.log(info["message"]);
+                    this.logger.error(info["message"]);
                     break;
                 case "warn":
                     this.logger.warn(info["message"]);
@@ -35,7 +35,7 @@ export class NodeRedTransport extends Transport {
 @injectable()
 export class i4Logger {
     public readonly logger = createLogger({
-        level: 'info',
+        level: 'debug',
         format: format.simple(),
         transports: [
         ]

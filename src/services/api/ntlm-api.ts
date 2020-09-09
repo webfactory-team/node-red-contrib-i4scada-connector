@@ -16,7 +16,7 @@ export class NtlmApi {
 
     }
 
-    private serverUrl = "https://demo.i4scada.de";
+    private serverUrl = "http://localhost";
 
     private get serviceUrl() {
         return this.serverUrl + "/_SERVICES/WebServices/WCF"
@@ -27,10 +27,11 @@ export class NtlmApi {
     }
 
     public set url(serverUrl: string) {
-        this.serverUrl = serverUrl || "https://demo.i4scada.de";
+        this.serverUrl = serverUrl || "http://localhost";
     }
 
     public async loginWindowsUser(sessionId: string, clientId: string, millisecondsTimeOut: number): Promise<any> {
+        this.logger.logger.debug(`loginWindowsUser`);
         const data = await request.post(`${this.ntlmServiceUrl}/LoginWindowsUser`, {
             json: true, body: {
                 sessionId: sessionId,
@@ -42,6 +43,7 @@ export class NtlmApi {
     }
 
     public async getCallerAccountDetails(): Promise<AccountDTO> {
+        this.logger.logger.debug(`getCallerAccountDetails`);
         const data = await request.post(`${this.ntlmServiceUrl}/GetCallerAccountDetails`, {
             json: true, body: {
             }

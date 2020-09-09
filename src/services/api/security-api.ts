@@ -17,7 +17,7 @@ export class SecurityApi {
 
     }
 
-    private serverUrl = "https://demo.i4scada.de";
+    private serverUrl = "http://localhost";
 
     private get serviceUrl() {
         return this.serverUrl + "/_SERVICES/WebServices/WCF"
@@ -28,10 +28,11 @@ export class SecurityApi {
     }
 
     public set url(serverUrl: string) {
-        this.serverUrl = serverUrl || "https://demo.i4scada.de";
+        this.serverUrl = serverUrl || "http://localhost";
     }
 
     public async connectWithToken(securityToken: string, requestedLicenses: string[] = null): Promise<SecuritySessionDTO> {
+        this.logger.logger.debug(`connectWithToken`);
         const data = await request.post(`${this.securityServiceUrl}/ConnectWithToken`, {
             json: true, body: {
                 securityToken: securityToken,
@@ -42,7 +43,7 @@ export class SecurityApi {
     }
 
     public async login(sessionId: string, clientId: string, userName: string, password: string, isDomainUser: boolean, millisecondsTimeOut: number): Promise<string> {
-        this.logger.logger.info(`${this.securityServiceUrl}/Login`);
+        this.logger.logger.debug(`login`);
         const data = await request.post(`${this.securityServiceUrl}/Login`, {
             json: true, body: {
                 sessionId: sessionId,
@@ -57,6 +58,7 @@ export class SecurityApi {
     }
 
     public async isUserLoggedIn(securityToken: string, millisecondsTimeOut: number): Promise<boolean> {
+        this.logger.logger.debug(`isUserLoggedIn`);
         const data = await request.post(`${this.securityServiceUrl}/IsUserLoggedIn`, {
             json: true, body: {
                 securityToken: securityToken,
@@ -67,6 +69,7 @@ export class SecurityApi {
     }
 
     public async logout(securityToken: string, millisecondsTimeOut: number): Promise<boolean> {
+        this.logger.logger.debug(`logout`);
         const data = await request.post(`${this.securityServiceUrl}/LogoutByToken`, {
             json: true, body: {
                 securityToken: securityToken,
@@ -77,6 +80,7 @@ export class SecurityApi {
     }
 
     public async getCurrentLoggedInUser(securityToken: string, millisecondsTimeOut: number): Promise<UserDTO> {
+        this.logger.logger.debug(`getCurrentLoggedInUser`);
         const data = await request.post(`${this.securityServiceUrl}/GetCurrentLoggedInUser`, {
             json: true, body: {
                 securityToken: securityToken,
@@ -87,10 +91,11 @@ export class SecurityApi {
     }
 
     public async getCurrentUserAuthorizations(securityToken: string, millisecondsTimeOut: number): Promise<UserAuthorizationInfo> {
+        this.logger.logger.debug(`getCurrentUserAuthorizations`);
         const data = await request.post(`${this.securityServiceUrl}/GetCurrentUserAuthorizations`, {
             json: true, body: {
                 securityToken: securityToken,
-                CurrentUserAuthorizations: millisecondsTimeOut
+                millisecondsTimeOut: millisecondsTimeOut
             }
         });
         return data.d;
