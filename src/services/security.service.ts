@@ -12,7 +12,8 @@ export enum SecurityStatus {
     Authenticating,
     Authenticated,
     AuthenticationError,
-    RemoteLogout
+    RemoteLogout,
+    NetworkError
 }
 
 @injectable()
@@ -35,9 +36,19 @@ export class SecurityService {
     public async login(userName: string, password: string, isDomainUser: boolean) {
         this.logger.logger.info(`Logging in client ID: ${this.sessionService.getClientId()}`);
         this.securityStatusQueue.next(SecurityStatus.Authenticating);
-        const result = await this.performLogin(userName, password, isDomainUser);
+        let result = false;
+        let networkError = false;
+        try {
+            result = await this.performLogin(userName, password, isDomainUser);
+        } catch (error) {
+            this.logger.logger.error(error);
+            this.securityStatusQueue.next(SecurityStatus.NetworkError);
+            networkError = true;
+        }
         if (!result) {
-            this.securityStatusQueue.next(SecurityStatus.AuthenticationError);
+            if (!networkError) {
+                this.securityStatusQueue.next(SecurityStatus.AuthenticationError);
+            }
             throw "Login failed";
         }
         this.securityStatusQueue.next(SecurityStatus.Authenticated);
@@ -69,12 +80,8 @@ export class SecurityService {
     }
 
     private async performLogin(userName: string, password: string, isDomainUser: boolean) {
-        try {
-            const token = await this.securityApi.login(this.sessionService.getSessionId(), this.sessionService.getClientId(), userName, password, isDomainUser, this.millisecondsTimeOut);
-            return await this.executeAfterLogin(token);
-        } catch (error) {
-            this.logger.logger.error(error);
-        }
+        const token = await this.securityApi.login(this.sessionService.getSessionId(), this.sessionService.getClientId(), userName, password, isDomainUser, this.millisecondsTimeOut);
+        return await this.executeAfterLogin(token);
     }
 
     private async executeAfterLogin(resultobject: string | FunctionResultDTO<string>) {
@@ -120,7 +127,9 @@ export class SecurityService {
     }
 
     public stop() {
-        this.sessionSignalSubscription.unsubscribe();
+        if (this.sessionSignalSubscription) {
+            this.sessionSignalSubscription.unsubscribe();
+        }
     }
 
     public dispose() {

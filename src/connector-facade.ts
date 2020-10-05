@@ -13,12 +13,19 @@ import { ITokenPersistentService } from "./services/token-persistent.service";
 import { FlowConnectionInfo } from "./services/models/flow-connection-info.model";
 import { NodeStatusService, INodeStatus } from "./services/node-status.service";
 
+export enum RetryStatus {
+    RetryWaiting,
+    RetryAttempt,
+    RetryStopped
+}
+
 @injectable()
 export class ConnectorFacade {
 
     public readonly pollingStatusQueue: Subject<PollingStatus>;
     public readonly connectorStatusQueue: Subject<ConnectorStatus>;
-    public readonly securityStatusQueue: Subject<SecurityStatus>;    
+    public readonly securityStatusQueue: Subject<SecurityStatus>;
+    public readonly retryStatusQueue = new Subject<RetryStatus>();
 
     private pollingStatusSubscription: Subscription;
 
@@ -31,13 +38,14 @@ export class ConnectorFacade {
         @inject(SignalsService) private readonly signalsService: SignalsService,
         @inject(SecurityService) private readonly securityService: SecurityService,
         @inject(SessionService) private readonly sessionService: SessionService,
-        @inject("ITokenPersistentService") private readonly tokenPersistentService: ITokenPersistentService, 
+        @inject("ITokenPersistentService") private readonly tokenPersistentService: ITokenPersistentService,
         @inject(i4Logger) private readonly logger: i4Logger,
         @inject(NodeStatusService) private readonly nodeStatusService: NodeStatusService
     ) {
         this.pollingStatusQueue = signalsService.pollingStatusQueue;
         this.connectorStatusQueue = connectorService.connectorStatusQueue;
         this.securityStatusQueue = securityService.securityStatusQueue;
+        this.nodeStatusService.addRetryStatusSubscription(this.retryStatusQueue);
         this.addStatusSubscriptions();
     }
 
@@ -62,11 +70,11 @@ export class ConnectorFacade {
         this.removeStatusSubscriptions();
         await this.rejectDelay(2000);
         await this.disconnect();
-        const connectionInfo = this.tokenPersistentService.getFlowConnectionInfo();
-        await this.connect(connectionInfo.url, connectionInfo.pollInterval, connectionInfo.userName, connectionInfo.password, null);
         await this.retry(async () => {
+            const connectionInfo = this.tokenPersistentService.getFlowConnectionInfo();
+            await this.connect(connectionInfo.url, connectionInfo.pollInterval, connectionInfo.userName, connectionInfo.password, null);    
             await this.getSignals(this.signals, this.signals.length);
-        })
+        });
         this.addStatusSubscriptions();
         this.getOnlineUpdates();
     }
@@ -74,15 +82,19 @@ export class ConnectorFacade {
     private async retry(connect: () => Promise<void>, maxRetries: number = null) {
         let attempt = null;
         while (true) {
-            if ((maxRetries !== null && attempt >= maxRetries) || this.stopped)
+            if ((maxRetries !== null && attempt >= maxRetries) || this.stopped) {
+                this.retryStatusQueue.next(RetryStatus.RetryStopped);
                 break;
+            }
             attempt++;
             try {
                 this.logger.logger.info(`try to reconnect attempt: ${attempt}`);
+                this.retryStatusQueue.next(RetryStatus.RetryAttempt);
                 await connect();
                 break;
             } catch (error) {
                 this.logger.logger.error(error);
+                this.retryStatusQueue.next(RetryStatus.RetryWaiting);
                 await this.rejectDelay(5000);
             }
         }
@@ -165,9 +177,9 @@ export class ConnectorFacade {
         this.sessionService.clearSecureSession();
     }
 
-    public async dispose() {      
+    public async dispose() {
         this.nodeStatusService.dispose();
-        this.subscriptions = []; 
+        this.subscriptions = [];
         this.securityService.stop();
         this.signalsService.stop();
 

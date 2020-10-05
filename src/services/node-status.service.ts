@@ -2,8 +2,9 @@ import { ConnectorService, ConnectorStatus } from "./connector.service";
 import { SignalsService, PollingStatus } from "./signals.service";
 import { inject, injectable } from "inversify";
 import { i4Logger } from "../logger/logger";
-import { Subscription } from "rxjs";
+import { Subject, Subscription } from "rxjs";
 import { SecurityService, SecurityStatus } from "./security.service";
+import { RetryStatus } from "../connector-facade";
 
 export interface INodeStatus {
     fill: string;
@@ -19,6 +20,7 @@ export class NodeStatusService {
     private pollingStatusSubscription: Subscription;
     private connectorStatusSubscription: Subscription;
     private securityStatusSubscription: Subscription;
+    private retryStatusSubscription: Subscription;
 
     constructor(
         @inject(ConnectorService) private readonly connectorService: ConnectorService,
@@ -35,24 +37,32 @@ export class NodeStatusService {
         this.securityStatusSubscription = this.securityService.securityStatusQueue.subscribe((securityStatus) => this.onSecurityStatus(securityStatus));
     }
 
+    public addRetryStatusSubscription(retryStatusQueue: Subject<RetryStatus>) {
+        this.retryStatusSubscription = retryStatusQueue.subscribe((status) => this.onRetryStatus(status));
+    }
+
     private async onPollingStatus(pollingStatus: PollingStatus) {
-        this.logger.logger.debug(PollingStatus[pollingStatus]);
         if (this.nodeStatusCallback) {
             this.nodeStatusCallback(this.getPollingStatusInformation(pollingStatus));
         }
     }
 
     private onConnectorStatus(connectorStatus: ConnectorStatus) {
-        this.logger.logger.debug(ConnectorStatus[connectorStatus]);
+      //  this.logger.logger.debug(ConnectorStatus[connectorStatus]);
         if (this.nodeStatusCallback) {
             this.nodeStatusCallback(this.getConnectorStatusInformation(connectorStatus));
         }
     }
 
     private onSecurityStatus(securityStatus: SecurityStatus) {
-        this.logger.logger.debug(SecurityStatus[securityStatus]);
         if (this.nodeStatusCallback) {
-            this.nodeStatusCallback(this.getSecurityrStatusInformation(securityStatus));
+            this.nodeStatusCallback(this.getSecurityStatusInformation(securityStatus));
+        }
+    }
+
+    private onRetryStatus(status: RetryStatus) {
+        if (this.nodeStatusCallback) {
+            this.nodeStatusCallback(this.getRetryStatusInformation(status));
         }
     }
 
@@ -129,7 +139,7 @@ export class NodeStatusService {
         } as INodeStatus;
     }
 
-    private getSecurityrStatusInformation(securityStatus: SecurityStatus) {
+    private getSecurityStatusInformation(securityStatus: SecurityStatus) {
 
         let fill = "grey";
         let shape = "dot";
@@ -137,6 +147,7 @@ export class NodeStatusService {
 
         switch (securityStatus) {
             case SecurityStatus.AuthenticationError:
+            case SecurityStatus.NetworkError:
                 fill = "red";
                 break;
             case SecurityStatus.Authenticating:
@@ -158,10 +169,38 @@ export class NodeStatusService {
         } as INodeStatus;
     }
 
+    private getRetryStatusInformation(status: RetryStatus) {
+
+        let fill = "grey";
+        let shape = "dot";
+        let text = RetryStatus[status];
+
+        switch (status) {
+            case RetryStatus.RetryStopped:
+                fill = "red";
+                shape = "ring";
+                break;
+            case RetryStatus.RetryWaiting:
+                fill = "yellow";
+                shape = "ring";
+                break;
+            case RetryStatus.RetryAttempt:
+                fill = "yellow";
+                break;
+        }
+
+        return {
+            fill: fill,
+            shape: shape,
+            text: text
+        } as INodeStatus;
+    }
+
     private removeStatusSubscriptions() {
         this.pollingStatusSubscription.unsubscribe();
         this.connectorStatusSubscription.unsubscribe();
         this.securityStatusSubscription.unsubscribe();
+        this.retryStatusSubscription.unsubscribe();
     }
 
     public setStatusCallback(callback: (nodeStatus: INodeStatus) => void) {
@@ -171,5 +210,4 @@ export class NodeStatusService {
     public dispose() {
         this.removeStatusSubscriptions();
     }
-
 }

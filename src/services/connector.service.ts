@@ -72,7 +72,15 @@ export class ConnectorService {
             return this.sessionPromise;
         }
         this.connectorStatusQueue.next(ConnectorStatus.Connecting);
-        this.sessionPromise = this.connectBase();
+        try {
+            this.sessionPromise = this.connectBase();
+            await this.sessionPromise;
+        } catch (error) {
+            this.connectorStatusQueue.next(ConnectorStatus.ConnectionError);
+            throw error;
+        } finally {
+            this.sessionPromise = null;
+        }
         this.connectorStatusQueue.next(ConnectorStatus.Connected);
         return this.sessionPromise;
     }
@@ -81,26 +89,19 @@ export class ConnectorService {
     private async connectBase() {
         this.logger.logger.debug("connectBase");
         const sessionId = this.sessionService.getSessionId();
-        try {
-            if (!sessionId) {
-                const securityToken = this.sessionService.getSecurityToken();
-                if (securityToken) {
-                    this.logger.logger.info("Updating session");
-                    const session = await this.securityApi.connectWithToken(securityToken, []);
-                    await this.updateSession(session);
-                } else {
-                    this.logger.logger.info("Creating session");
-                    let session = await this.signalsApi.connect();
-                    this.createSession(session);
-                }
+        if (!sessionId) {
+            const securityToken = this.sessionService.getSecurityToken();
+            if (securityToken) {
+                this.logger.logger.info("Updating session");
+                const session = await this.securityApi.connectWithToken(securityToken, []);
+                await this.updateSession(session);
             } else {
-                this.logger.logger.debug("Session already exsist");
+                this.logger.logger.info("Creating session");
+                let session = await this.signalsApi.connect();
+                this.createSession(session);
             }
-        } catch (error) {
-            this.logger.logger.error(error);
-        }
-        finally {
-            this.sessionPromise = null;
+        } else {
+            this.logger.logger.debug("Session already exsist");
         }
         return {
             IsValidLicense: true,
