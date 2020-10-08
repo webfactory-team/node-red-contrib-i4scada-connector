@@ -12,9 +12,9 @@ import { DescriptionDTO } from "../models/dto/description.dto";
 import { GetSignalNamesFilterDTO } from "../models/dto/get-signal-names-filter.dto";
 import { NameDTO } from "../models/dto/name.dto";
 
-    /**
-     *  SignalServiceApi
-     */
+/**
+ *  SignalServiceApi
+ */
 @injectable()
 export class SignalsApi {
 
@@ -25,6 +25,7 @@ export class SignalsApi {
     }
 
     private serverUrl = "http://localhost";
+    private readonly timeout = 10000;
 
     private get serviceUrl() {
         return this.serverUrl + "/_SERVICES/WebServices/WCF"
@@ -41,27 +42,34 @@ export class SignalsApi {
 
     public async connect(): Promise<SessionDTO> {
         this.logger.logger.debug(`connect`);
-        const data = await request.post(`${this.signalServiceUrl}/Connect`, { json: true });
+        const data = await request.post(`${this.signalServiceUrl}/Connect`, {
+            json: true,
+            timeout: this.timeout
+        });
         return data.d;
     }
 
     public async disconnect(sessionId: string): Promise<void> {
         this.logger.logger.debug(`disconnect`);
         await request.post(`${this.signalServiceUrl}/Disconnect`, {
-            json: true, body: {
+            json: true,
+            body: {
                 sessionId: sessionId
-            }
+            },
+            timeout: this.timeout
         });
     }
 
     public async registerSignals(sessionId: string, clientId: string, signalNames: string[]): Promise<number[]> {
         this.logger.logger.debug(`registerSignals`);
         const data = await request.post(`${this.signalServiceUrl}/RegisterSignals`, {
-            json: true, body: {
+            json: true,
+            body: {
                 sessionId: sessionId,
                 clientId: clientId,
                 signalNames: signalNames
-            }
+            },
+            timeout: this.timeout
         });
         return data.d;
     }
@@ -69,7 +77,8 @@ export class SignalsApi {
     public async unregisterSignals(sessionId: string, clientId: string, signalNames: string[]): Promise<number[]> {
         this.logger.logger.debug(`unregisterSignals`);
         const data = await request.post(`${this.signalServiceUrl}/UnregisterSignals`, {
-            json: true, body: {
+            json: true,
+            body: {
                 sessionId: sessionId,
                 clientId: clientId,
                 signalNames: signalNames
@@ -81,11 +90,13 @@ export class SignalsApi {
     public async getUpdates(sessionId: string, clientId: string, requestId: number): Promise<SignalUpdateDTO> {
         this.logger.logger.debug(`getUpdates`);
         const data = await request.post(`${this.signalServiceUrl}/GetUpdates`, {
-            json: true, body: {
+            json: true,
+            body: {
                 sessionId: sessionId,
                 clientId: clientId,
                 requestId: requestId
-            }
+            },
+            timeout: this.timeout
         });
         this.logger.logger.info(JSON.stringify(data));
         return data.d;
@@ -94,11 +105,13 @@ export class SignalsApi {
     public async readSignals(sessionId: string, clientId: string, signalNames: string[]): Promise<SignalValueDTO[]> {
         this.logger.logger.debug(`readSignals`);
         const data = await request.post(`${this.signalServiceUrl}/ReadSignals`, {
-            json: true, body: {
+            json: true,
+            body: {
                 sessionId: sessionId,
                 clientId: clientId,
                 signalNames: signalNames
-            }
+            },
+            timeout: this.timeout
         });
         return data.d;
     }
@@ -110,7 +123,8 @@ export class SignalsApi {
                 clientId: clientId,
                 sessionId: sessionId,
                 values: values
-            }
+            },
+            timeout: this.timeout
         });
         return data.d;
     }
@@ -122,7 +136,8 @@ export class SignalsApi {
                 securityToken: securityToken,
                 clientId: clientId,
                 values: values
-            }
+            },
+            timeout: this.timeout
         });
         return data.d;
     }

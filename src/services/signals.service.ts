@@ -210,6 +210,13 @@ export class SignalsService {
     private async doUpdate() {
         this.pollingStatusQueue.next(PollingStatus.Polling);
         const request = this.updateRequest;
+
+        if (!this.updateRequest) {
+            this.pollingStatusQueue.next(PollingStatus.Stopped);
+            this.logger.logger.warn("updateRequest does not exsist, the doUpdate seems to be stopped.");
+            return;
+        }
+
         try {
             this.getUpdates = true;
             this.logger.logger.debug(`getUpdates - sessionId:${request.sessionId} - clientId:${request.clientId} - requestId:${request.requestId}`);
@@ -219,11 +226,15 @@ export class SignalsService {
         } catch (error) {
             this.pollingStatusQueue.next(PollingStatus.PollingError);
             this.logger.logger.error(error);
-            if (this.timer) {
-                clearTimeout(this.timer);
-                this.timer = null;
-            }
-            this.timer = _.delay(() => this.doUpdate(), this.updateInterval);
+            this.resetTimer();
+            this.timer = _.delay(() => { this.doUpdate() }, this.updateInterval);
+        }
+    }
+
+    private resetTimer() {
+        if (this.timer) {
+            clearTimeout(this.timer);
+            this.timer = null;
         }
     }
 
@@ -250,13 +261,15 @@ export class SignalsService {
                 });
             }
         }
-        if (this.timer) {
-            clearTimeout(this.timer);
-            this.timer = null;
-        }
+        this.resetTimer();
         this.timer = _.delay(() => {
-            this.createUpdateRequest(this.updateRequest.requestId, responseId);
-            this.doUpdate();
+           if (this.updateRequest) {
+                this.createUpdateRequest(this.updateRequest.requestId, responseId);
+                this.doUpdate();
+            } else {
+                this.pollingStatusQueue.next(PollingStatus.Stopped);
+                this.logger.logger.warn("updateRequest does not exsist, the updateSignals seems to be stopped.");
+            }
         }, this.updateInterval);
 
     }
@@ -343,10 +356,7 @@ export class SignalsService {
 
     public stop() {
         this.pollingStatusQueue.next(PollingStatus.Stopped);
-        if (this.timer) {
-            clearTimeout(this.timer);
-            this.timer = null;
-        }
+        this.resetTimer();
 
         this.updateRequest = null;
         this.getUpdates = false;

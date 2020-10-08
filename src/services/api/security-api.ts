@@ -18,6 +18,7 @@ export class SecurityApi {
     }
 
     private serverUrl = "http://localhost";
+    private readonly timeout = 10000;
 
     private get serviceUrl() {
         return this.serverUrl + "/_SERVICES/WebServices/WCF"
@@ -37,7 +38,8 @@ export class SecurityApi {
             json: true, body: {
                 securityToken: securityToken,
                 requestedLicenses: requestedLicenses
-            }
+            },
+            timeout: this.timeout
         });
         return data.d;
     }
@@ -52,7 +54,8 @@ export class SecurityApi {
                 password: password,
                 isDomainUser: isDomainUser,
                 millisecondsTimeOut: millisecondsTimeOut
-            }
+            },
+            timeout: this.timeout
         });
         return data.d;
     }
@@ -63,7 +66,8 @@ export class SecurityApi {
             json: true, body: {
                 securityToken: securityToken,
                 millisecondsTimeOut: millisecondsTimeOut
-            }
+            },
+            timeout: this.timeout
         });
         return data.d;
     }
@@ -74,7 +78,8 @@ export class SecurityApi {
             json: true, body: {
                 securityToken: securityToken,
                 millisecondsTimeOut: millisecondsTimeOut
-            }
+            },
+            timeout: this.timeout
         });
         return data.d;
     }
@@ -85,7 +90,8 @@ export class SecurityApi {
             json: true, body: {
                 securityToken: securityToken,
                 millisecondsTimeOut: millisecondsTimeOut
-            }
+            },
+            timeout: this.timeout
         });
         return data.d;
     }
@@ -96,7 +102,8 @@ export class SecurityApi {
             json: true, body: {
                 securityToken: securityToken,
                 millisecondsTimeOut: millisecondsTimeOut
-            }
+            },
+            timeout: this.timeout
         });
         return data.d;
     }
