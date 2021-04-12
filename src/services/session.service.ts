@@ -1,6 +1,5 @@
 import { injectable, inject } from "inversify";
 import { SecurityApi } from "./api/security-api";
-import * as uuid from "uuid";
 import { ITokenPersistentService } from "./token-persistent.service";
 import { i4Logger } from "../logger/logger";
 
@@ -33,17 +32,9 @@ export class SessionService {
 
     }
 
-    private guid() {
-        return uuid.v4();
-    }
-
     public getClientId() {
         this.logger.logger.debug("ClientId requested");
-        if (!this.tokenPersistentService.getClientId()) {
-            this.logger.logger.debug("Create new ClientId");
-            this.tokenPersistentService.setClientId(this.guid());
-        }
-        return this.tokenPersistentService.getClientId();
+        return "ac4a567e-adc8-404e-d666-17ea9f074962";
     }
 
     public getSecurityToken() {

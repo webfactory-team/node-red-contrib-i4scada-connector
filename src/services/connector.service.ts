@@ -97,7 +97,7 @@ export class ConnectorService {
                 await this.updateSession(session);
             } else {
                 this.logger.logger.info("Creating session");
-                let session = await this.signalsApi.connect();
+                let session = await this.signalsApi.connect(this.sessionService.getClientId());
                 this.createSession(session);
             }
         } else {

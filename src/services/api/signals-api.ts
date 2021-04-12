@@ -40,10 +40,13 @@ export class SignalsApi {
     }
 
 
-    public async connect(): Promise<SessionDTO> {
+    public async connect(clientId: string): Promise<SessionDTO> {
         this.logger.logger.debug(`connect`);
         const data = await request.post(`${this.signalServiceUrl}/Connect`, {
             json: true,
+            body: {
+                clientId: clientId
+            },
             timeout: this.timeout
         });
         return data.d;

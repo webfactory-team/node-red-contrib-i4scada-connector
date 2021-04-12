@@ -16,7 +16,6 @@ export class TestTokenFlowsPersistentService implements ITokenPersistentService 
 
     public clearSecureSession(): void {
         this.securityToken = null;
-        this.clientId = null;
         this.sessionId = null;
         this.currentLoggedInUser = null;
     }
@@ -24,11 +23,6 @@ export class TestTokenFlowsPersistentService implements ITokenPersistentService 
     public getSecurityToken(): string {
         const token = this.securityToken || null;
         return token;
-    }
-
-    public getClientId(): string {
-        const clientId = this.clientId || null;
-        return clientId;
     }
 
     public getSessionId(): string {
@@ -47,10 +41,6 @@ export class TestTokenFlowsPersistentService implements ITokenPersistentService 
 
     public setSecurityToken(token: string): void {
         this.securityToken = token;
-    }
-
-    public setClientId(id: string): void {
-        this.clientId = id;
     }
 
     public setSessionId(id: string): void {

@@ -4,13 +4,11 @@ export interface ITokenPersistentService {
     clearSecureSession(): void;
 
     getSecurityToken(): string;
-    getClientId(): string;
     getSessionId(): string;
     getCurrentLoggedInUser(): string;
     getFlowConnectionInfo(): FlowConnectionInfo;
 
     setSecurityToken(token: string): void;
-    setClientId(id: string): void;
     setSessionId(id: string): void;
     setCurrentLoggedInUser(user: string): void;
     setFlowConnectionInfo(info: FlowConnectionInfo): void
@@ -25,7 +23,6 @@ export class TokenFlowPersistentService implements ITokenPersistentService {
     public clearSecureSession(): void {
         if(!this.context) return;
         this.context.set("securityToken", null);
-        this.context.set("clientId", null);
         this.context.set("sessionId", null);
         this.context.set("currentLoggedInUser", null);
     }
@@ -34,12 +31,6 @@ export class TokenFlowPersistentService implements ITokenPersistentService {
         if(!this.context) return null;
         const token = this.context.get("securityToken") || null;
         return token;
-    }
-
-    public getClientId(): string {
-        if(!this.context) return null;
-        const clientId = this.context.get("clientId") || null;
-        return clientId;
     }
 
     public getSessionId(): string {
@@ -63,11 +54,6 @@ export class TokenFlowPersistentService implements ITokenPersistentService {
     public setSecurityToken(token: string): void {
         if(!this.context) return;
         this.context.set("securityToken", token);
-    }
-
-    public setClientId(id: string): void {
-        if(!this.context) return;
-        this.context.set("clientId", id);
     }
 
     public setSessionId(id: string): void {
